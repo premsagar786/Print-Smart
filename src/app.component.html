@@ -1,28 +1,28 @@
 <!-- Rates Modal -->
 @if (showRatesModal()) {
-  <div class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50" (click)="toggleRatesModal()">
+  <div class="fixed inset-0 bg-gray-500 bg-opacity-25 backdrop-blur-sm flex items-center justify-center z-50" (click)="toggleRatesModal()">
     <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-8 m-4" (click)="$event.stopPropagation()">
-        <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Printing Rates</h2>
+        <h2 class="text-2xl font-bold text-primary mb-6 text-center">Printing Rates</h2>
         <div class="space-y-4">
-          <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
-            <span class="font-medium text-gray-700">Black & White (per page)</span>
-            <span class="font-bold text-lg text-gray-900">₹{{costPerPageBw().toFixed(2)}}</span>
+          <div class="flex justify-between items-center bg-primary-50 p-3 rounded-lg">
+            <span class="font-medium text-primary-700">Black & White (per page)</span>
+            <span class="font-bold text-lg text-primary-600">₹{{costPerPageBw().toFixed(2)}}</span>
           </div>
-          <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
-            <span class="font-medium text-gray-700">Color (per page)</span>
-            <span class="font-bold text-lg text-gray-900">₹{{costPerPageColor().toFixed(2)}}</span>
+          <div class="flex justify-between items-center bg-primary-50 p-3 rounded-lg">
+            <span class="font-medium text-primary-700">Color (per page)</span>
+            <span class="font-bold text-lg text-primary-600">₹{{costPerPageColor().toFixed(2)}}</span>
           </div>
           <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
             <span class="font-medium text-gray-700">Double-Sided Discount</span>
-            <span class="font-bold text-lg text-green-600">{{(1 - doubleSidedDiscount()) * 100}}% OFF</span>
+            <span class="font-bold text-lg text-green-600">{{ doubleSidedDiscountPercent() }}% OFF</span>
           </div>
           <div class="flex justify-between items-center bg-red-50 p-3 rounded-lg border border-red-200">
             <span class="font-medium text-red-700">Fast Track Surcharge</span>
-            <span class="font-bold text-lg text-red-600">+{{(fastOrderSurchargeMultiplier() - 1) * 100}}%</span>
+            <span class="font-bold text-lg text-red-600">+{{ fastOrderSurchargePercent() }}%</span>
           </div>
         </div>
         <div class="mt-8 flex justify-center">
-            <button type="button" (click)="toggleRatesModal()" class="px-6 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-600">Got it</button>
+            <button type="button" (click)="toggleRatesModal()" class="px-6 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">Got it</button>
         </div>
     </div>
   </div>
@@ -182,7 +182,7 @@
                     <div class="mt-2 bg-gray-50 rounded-lg p-4 flex items-center justify-between">
                       <div>
                         <h4 class="font-semibold text-gray-800">Fast Track</h4>
-                        <p class="text-xs text-gray-500">Prioritize your job for a {{(fastOrderSurchargeMultiplier() - 1) * 100}}% surcharge.</p>
+                        <p class="text-xs text-gray-500">Prioritize your job for a {{ fastOrderSurchargePercent() }}% surcharge.</p>
                       </div>
                       <!-- Toggle Switch -->
                       <button type="button" (click)="updateOption('isFastOrder', !printOptions().isFastOrder)" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" [class]="printOptions().isFastOrder ? 'bg-primary' : 'bg-gray-200'" role="switch" [attr.aria-checked]="printOptions().isFastOrder">
@@ -508,7 +508,14 @@
                         </div>
                       </div>
                     </div>
-                    <div class="mt-8 pt-5 border-t border-gray-200 flex justify-end">
+                    <div class="mt-8 pt-5 border-t border-gray-200 flex justify-end items-center space-x-3">
+                       @if(showSaveConfirmation()) {
+                        <div class="flex items-center space-x-2 text-green-600 transition-opacity duration-300">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                          <span class="text-sm font-medium">Saved!</span>
+                        </div>
+                       }
+                       <button type="button" (click)="cancelRateChanges()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancel</button>
                        <button type="submit" class="flex items-center space-x-2 bg-primary hover:bg-primary-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
                           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6a1 1 0 10-2 0v5.586L7.707 10.293zM3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 11-2 0V5H5v1a1 1 0 11-2 0V4z" /></svg>
                           <span>Save Changes</span>

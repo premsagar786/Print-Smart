@@ -51,6 +51,7 @@ export class AppComponent implements OnDestroy {
   isLoggedIn = signal<boolean>(false);
   adminView = signal<'queue' | 'completed' | 'payments' | 'rates'>('queue');
   queueFilter = signal<'all' | 'queued' | 'printing'>('all');
+  showSaveConfirmation = signal<boolean>(false);
 
   // --- WALK-IN ORDER STATE ---
   showWalkinOrderModal = signal<boolean>(false);
@@ -71,11 +72,18 @@ export class AppComponent implements OnDestroy {
   editableRates = signal({
     bw: this.costPerPageBw(),
     color: this.costPerPageColor(),
-    discount: (1 - this.doubleSidedDiscount()) * 100,
-    surcharge: (this.fastOrderSurchargeMultiplier() - 1) * 100
+    discount: Math.round((1 - this.doubleSidedDiscount()) * 100),
+    surcharge: Math.round((this.fastOrderSurchargeMultiplier() - 1) * 100)
   });
 
   // --- COMPUTED SIGNALS (DERIVED STATE) ---
+  doubleSidedDiscountPercent = computed(() => {
+    return Math.round((1 - this.doubleSidedDiscount()) * 100);
+  });
+
+  fastOrderSurchargePercent = computed(() => {
+    return Math.round((this.fastOrderSurchargeMultiplier() - 1) * 100);
+  });
 
   baseCost = computed(() => {
     const options = this.printOptions();
@@ -121,6 +129,7 @@ export class AppComponent implements OnDestroy {
   filteredQueue = computed(() => {
     const queue = this.printQueue();
     const filter = this.queueFilter();
+    // Fix: The bitwise OR operator `|` was used instead of a comma `,` to separate array elements. This caused a type error because the expression was evaluated as a number, which is not assignable to `JobStatus`.
     const liveStatuses: JobStatus[] = ['Queued', 'Printing', 'Ready'];
     const liveQueue = queue.filter(job => liveStatuses.includes(job.status));
 
@@ -146,8 +155,12 @@ export class AppComponent implements OnDestroy {
 
   constructor() {
     this.initializeMockQueue();
+    
+    // Resets the rate editing form when the admin navigates to the rates tab
     effect(() => {
-      console.log(`App state changed to: ${this.appState()}`);
+      if (this.adminView() === 'rates') {
+        this.cancelRateChanges();
+      }
     });
   }
 
@@ -275,7 +288,18 @@ export class AppComponent implements OnDestroy {
     this.costPerPageColor.set(newRates.color);
     this.doubleSidedDiscount.set(1 - (newRates.discount / 100));
     this.fastOrderSurchargeMultiplier.set(1 + (newRates.surcharge / 100));
-    // Optionally show a success message
+    
+    this.showSaveConfirmation.set(true);
+    setTimeout(() => this.showSaveConfirmation.set(false), 3000);
+  }
+
+  cancelRateChanges(): void {
+    this.editableRates.set({
+      bw: this.costPerPageBw(),
+      color: this.costPerPageColor(),
+      discount: this.doubleSidedDiscountPercent(),
+      surcharge: this.fastOrderSurchargePercent()
+    });
   }
   
   // --- MOCK QUEUE SIMULATION ---
