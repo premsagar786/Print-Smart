@@ -49,7 +49,7 @@ export class AppComponent implements OnDestroy {
   
   // --- ADMIN STATE ---
   isLoggedIn = signal<boolean>(false);
-  adminView = signal<'queue' | 'completed' | 'payments'>('queue');
+  adminView = signal<'queue' | 'completed' | 'payments' | 'rates'>('queue');
   queueFilter = signal<'all' | 'queued' | 'printing'>('all');
 
   // --- WALK-IN ORDER STATE ---
@@ -60,12 +60,20 @@ export class AppComponent implements OnDestroy {
   // --- RATES MODAL STATE ---
   showRatesModal = signal<boolean>(false);
 
-  // --- MOCK DATA & CONFIG ---
+  // --- CONFIG & DYNAMIC RATES ---
   private queueInterval: any;
-  readonly COST_PER_PAGE_BW = 0.5; // in rupees
-  readonly COST_PER_PAGE_COLOR = 2.0; // in rupees
-  readonly DOUBLE_SIDED_DISCOUNT = 0.9; // 10% discount
-  readonly FAST_ORDER_SURCHARGE = 1.25; // 25% surcharge
+  costPerPageBw = signal(0.5);
+  costPerPageColor = signal(2.0);
+  doubleSidedDiscount = signal(0.9); // Stored as multiplier e.g. 0.9 for 10% discount
+  fastOrderSurchargeMultiplier = signal(1.25); // Stored as multiplier e.g. 1.25 for 25% surcharge
+
+  // --- ADMIN RATE EDITING STATE ---
+  editableRates = signal({
+    bw: this.costPerPageBw(),
+    color: this.costPerPageColor(),
+    discount: (1 - this.doubleSidedDiscount()) * 100,
+    surcharge: (this.fastOrderSurchargeMultiplier() - 1) * 100
+  });
 
   // --- COMPUTED SIGNALS (DERIVED STATE) ---
 
@@ -83,18 +91,18 @@ export class AppComponent implements OnDestroy {
         pageCount = options.pages.split(',').length;
     }
 
-    const baseCostPerPage = options.colorMode === 'bw' ? this.COST_PER_PAGE_BW : this.COST_PER_PAGE_COLOR;
+    const baseCostPerPage = options.colorMode === 'bw' ? this.costPerPageBw() : this.costPerPageColor();
     let finalCost = pageCount * baseCostPerPage * options.copies;
 
     if (options.sides === 'double') {
-      finalCost *= this.DOUBLE_SIDED_DISCOUNT;
+      finalCost *= this.doubleSidedDiscount();
     }
     return finalCost;
   });
   
   fastOrderSurcharge = computed(() => {
     if (!this.printOptions().isFastOrder) return 0;
-    return this.baseCost() * (this.FAST_ORDER_SURCHARGE - 1);
+    return this.baseCost() * (this.fastOrderSurchargeMultiplier() - 1);
   });
 
   totalCost = computed(() => {
@@ -131,7 +139,7 @@ export class AppComponent implements OnDestroy {
 
   walkinOrderCost = computed(() => {
       const pages = this.walkinOrderPages();
-      const costPerPage = this.walkinOrderColorMode() === 'bw' ? this.COST_PER_PAGE_BW : this.COST_PER_PAGE_COLOR;
+      const costPerPage = this.walkinOrderColorMode() === 'bw' ? this.costPerPageBw() : this.costPerPageColor();
       return pages * costPerPage;
   });
 
@@ -252,6 +260,22 @@ export class AppComponent implements OnDestroy {
 
   toggleRatesModal(): void {
     this.showRatesModal.update(v => !v);
+  }
+
+  updateEditableRate(key: keyof typeof this.editableRates.prototype, value: string): void {
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+        this.editableRates.update(rates => ({...rates, [key]: numValue}));
+    }
+  }
+
+  saveRates(): void {
+    const newRates = this.editableRates();
+    this.costPerPageBw.set(newRates.bw);
+    this.costPerPageColor.set(newRates.color);
+    this.doubleSidedDiscount.set(1 - (newRates.discount / 100));
+    this.fastOrderSurchargeMultiplier.set(1 + (newRates.surcharge / 100));
+    // Optionally show a success message
   }
   
   // --- MOCK QUEUE SIMULATION ---
