@@ -27,6 +27,7 @@ interface PrintJob {
   token: string;
   cost: number;
   isFastOrder: boolean;
+  file?: File;
 }
 
 interface PrintRates {
@@ -209,6 +210,8 @@ export class AppComponent implements OnDestroy {
     
     // Auto-save the queue to local storage whenever it changes.
     effect(() => {
+      // NOTE: The 'file' property of a job is not serializable and will be omitted from localStorage.
+      // This is a known limitation of this frontend-only implementation.
       localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(this.printQueue()));
     });
     
@@ -256,6 +259,7 @@ export class AppComponent implements OnDestroy {
     try {
       const savedQueue = localStorage.getItem(QUEUE_STORAGE_KEY);
       if (savedQueue) {
+        // NOTE: Jobs loaded from storage will not have the 'file' property.
         const queue: PrintJob[] = JSON.parse(savedQueue);
         this.printQueue.set(queue);
       } else {
@@ -374,6 +378,7 @@ export class AppComponent implements OnDestroy {
       token: token,
       cost: this.totalCost(),
       isFastOrder: this.printOptions().isFastOrder,
+      file: file,
     };
     
     this.userJob.set(newJob);
@@ -412,6 +417,41 @@ export class AppComponent implements OnDestroy {
             job.id === jobId ? { ...job, status } : job
         )
       );
+  }
+
+  printJobDocument(job: PrintJob): void {
+    if (!job.file) {
+      alert('This job has no printable file. It might be a walk-in order or from a previous session.');
+      return;
+    }
+
+    const fileURL = URL.createObjectURL(job.file);
+    const printFrame = document.createElement('iframe');
+    
+    // Hide the iframe
+    printFrame.style.position = 'absolute';
+    printFrame.style.width = '0';
+    printFrame.style.height = '0';
+    printFrame.style.border = '0';
+    
+    document.body.appendChild(printFrame);
+
+    printFrame.src = fileURL;
+    printFrame.onload = () => {
+      try {
+        printFrame.contentWindow?.focus(); // Required for some browsers
+        printFrame.contentWindow?.print();
+      } catch (error) {
+        console.error('Printing failed:', error);
+        alert('Could not open print dialog. Please check browser console for details.');
+      } finally {
+        // The print dialog is blocking, but we use a timeout to be safe
+        setTimeout(() => {
+            URL.revokeObjectURL(fileURL);
+            document.body.removeChild(printFrame);
+        }, 1000);
+      }
+    };
   }
 
   async refreshDashboardData(): Promise<void> {
