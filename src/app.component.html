@@ -1,3 +1,4 @@
+
 <!-- Rates Modal -->
 @if (showRatesModal()) {
   <div class="fixed inset-0 bg-gray-500 bg-opacity-25 backdrop-blur-sm flex items-center justify-center z-50" (click)="toggleRatesModal()">
@@ -39,11 +40,35 @@
                     <label for="walkin-pages" class="block text-sm font-medium text-gray-700">Number of Pages</label>
                     <input type="number" id="walkin-pages" [value]="walkinOrderPages()" (input)="walkinOrderPages.set(+$event.target.value)" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary" min="1">
                 </div>
+                 <div>
+                    <label for="walkin-copies" class="block text-sm font-medium text-gray-700">Number of Copies</label>
+                    <input type="number" id="walkin-copies" [value]="walkinOrderCopies()" (input)="walkinOrderCopies.set(+$event.target.value)" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary" min="1">
+                </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Color Mode</label>
                     <div class="mt-2 grid grid-cols-2 gap-3">
                         <button type="button" (click)="walkinOrderColorMode.set('bw')" [class]="walkinOrderColorMode() === 'bw' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800'" class="px-4 py-2 text-sm font-semibold rounded-md transition">B&W</button>
                         <button type="button" (click)="walkinOrderColorMode.set('color')" [class]="walkinOrderColorMode() === 'color' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Color</button>
+                    </div>
+                </div>
+                 <div>
+                    <label class="block text-sm font-medium text-gray-700">Sides</label>
+                    <div class="mt-2 grid grid-cols-2 gap-3">
+                        <button type="button" (click)="walkinOrderSides.set('single')" [class]="walkinOrderSides() === 'single' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Single-Sided</button>
+                        <button type="button" (click)="walkinOrderSides.set('double')" [class]="walkinOrderSides() === 'double' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Double-Sided</button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Priority</label>
+                    <div class="mt-2 bg-gray-50 rounded-lg p-3 flex items-center justify-between">
+                      <div>
+                        <h4 class="font-semibold text-sm text-gray-800">Fast Track</h4>
+                        <p class="text-xs text-gray-500">+{{ fastOrderSurchargePercent() }}% surcharge</p>
+                      </div>
+                      <button type="button" (click)="walkinOrderIsFastOrder.set(!walkinOrderIsFastOrder())" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" [class]="walkinOrderIsFastOrder() ? 'bg-primary' : 'bg-gray-200'" role="switch" [attr.aria-checked]="walkinOrderIsFastOrder()">
+                        <span class="sr-only">Fast Track</span>
+                        <span aria-hidden="true" class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" [class]="walkinOrderIsFastOrder() ? 'translate-x-5' : 'translate-x-0'"></span>
+                      </button>
                     </div>
                 </div>
                 <div class="pt-4 border-t">
@@ -61,6 +86,45 @@
     </div>
   </div>
 }
+
+<!-- QR Scanner Modal -->
+@if (showScannerModal()) {
+  <div class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50" (click)="toggleScannerModal()">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-8 m-4" (click)="$event.stopPropagation()">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Scan Collection QR</h2>
+        <div class="w-full aspect-square flex items-center justify-center">
+            @if (!scannerMessage()) {
+                <div id="qr-reader" class="w-full border-2 border-dashed border-gray-300 rounded-lg overflow-hidden"></div>
+            } @else {
+                <div class="p-4 rounded-lg text-center"
+                     [class]="{
+                        'bg-green-100 text-green-800': scannerMessage()?.type === 'success',
+                        'bg-red-100 text-red-800': scannerMessage()?.type === 'error',
+                        'bg-blue-100 text-blue-800': scannerMessage()?.type === 'info'
+                     }">
+                    <p class="font-bold text-lg">
+                      @if(scannerMessage()?.type === 'success'){ Success }
+                      @if(scannerMessage()?.type === 'error'){ Error }
+                      @if(scannerMessage()?.type === 'info'){ Notice }
+                    </p>
+                    <p class="text-sm">{{ scannerMessage()?.text }}</p>
+                </div>
+            }
+        </div>
+        <p class="text-center text-gray-500 mt-4 text-sm">
+          @if (!scannerMessage()) {
+            Point your camera at the QR code on the customer's screen.
+          } @else {
+            This window will close automatically.
+          }
+        </p>
+        <div class="mt-6 flex justify-center">
+            <button type="button" (click)="toggleScannerModal()" class="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancel</button>
+        </div>
+    </div>
+  </div>
+}
+
 
 <div class="min-h-screen bg-gray-100 flex flex-col">
   <!-- Header -->
@@ -101,13 +165,13 @@
               <h2 class="text-3xl font-bold text-gray-900 mb-2">Upload Your Document</h2>
               <p class="text-gray-600 mb-8">Skip the queue. Print smart and save time.</p>
               <div class="relative border-2 border-dashed border-gray-300 rounded-lg p-10 hover:border-primary-400 transition duration-300 group">
-                <input type="file" (change)="handleFileSelect($event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" id="file-upload" accept=".pdf,.doc,.docx,.ppt,.pptx">
+                <input type="file" (change)="handleFileSelect($event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" id="file-upload" accept=".pdf,.jpeg,.jpg,.png,.heic,.heif">
                 <label for="file-upload" class="flex flex-col items-center justify-center space-y-4">
                   <svg class="w-16 h-16 text-gray-400 group-hover:text-primary transition duration-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l-3.75 3.75M12 9.75l3.75 3.75M17.25 12a4.5 4.5 0 0 1-9 0 4.5 4.5 0 0 1 9 0z" />
                   </svg>
                   <p class="text-lg font-semibold text-gray-700">Drag & Drop or <span class="text-primary font-bold">Browse</span></p>
-                  <p class="text-sm text-gray-500">Supports: PDF, DOC, PPT</p>
+                  <p class="text-sm text-gray-500">Supports: PDF, JPG, PNG, HEIC</p>
                 </label>
               </div>
             </div>
@@ -116,124 +180,146 @@
 
         <!-- OPTIONS STATE -->
         @case ('options') {
-          @if (uploadedFile; as file) {
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              <!-- Left Side: File Info & Options -->
-              <div class="lg:col-span-2 bg-white p-8 rounded-xl shadow-lg border border-gray-200">
-                <h2 class="text-2xl font-bold text-gray-900 mb-6 border-b pb-4">Configure Print Job</h2>
-                
-                <div class="mb-6 bg-primary-50 border border-primary-200 rounded-lg p-4 flex items-center space-x-4">
-                  <svg class="w-10 h-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                  </svg>
-                  <div>
-                    <p class="font-bold text-gray-800 truncate">{{ file.name }}</p>
-                    <p class="text-sm text-gray-600">{{ (file.size / 1024 || 0).toFixed(2) }} KB ・ {{ printOptions().totalPages }} Pages</p>
-                  </div>
-                </div>
-                
-                <!-- Print Options Form -->
-                <div class="space-y-6">
-                  <!-- Copies -->
-                  <div>
-                    <label for="copies" class="block text-sm font-medium text-gray-700 mb-1">Number of Copies</label>
-                    <input type="number" id="copies" [value]="printOptions().copies" (input)="updateOption('copies', $event.target.value)" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary" min="1">
-                  </div>
-
-                  <!-- Page Range -->
-                  <div>
-                      <label class="block text-sm font-medium text-gray-700 mb-1">Page Range</label>
-                      <div class="flex items-center space-x-4">
-                          <div class="flex items-center">
-                              <input id="pages-all" name="pages" type="radio" [checked]="printOptions().pages === 'all'" (change)="updateOption('pages', 'all')" class="h-4 w-4 text-primary border-gray-300 focus:ring-primary">
-                              <label for="pages-all" class="ml-2 block text-sm text-gray-900">All</label>
-                          </div>
-                          <div class="flex items-center">
-                              <input id="pages-custom" name="pages" type="radio" [checked]="printOptions().pages !== 'all'" (change)="updateOption('pages', '')" class="h-4 w-4 text-primary border-gray-300 focus:ring-primary">
-                              <label for="pages-custom" class="ml-2 block text-sm text-gray-900">Custom</label>
-                          </div>
-                      </div>
-                      @if (printOptions().pages !== 'all') {
-                          <input type="text" [value]="printOptions().pages" (input)="updateOption('pages', $event.target.value)" placeholder="e.g., 1-5, 8, 11-13" class="mt-2 w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
-                      }
-                  </div>
-
-                  <!-- Color Mode -->
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700">Color</label>
-                    <div class="mt-2 grid grid-cols-2 gap-3">
-                      <button type="button" (click)="updateOption('colorMode', 'bw')" [class]="printOptions().colorMode === 'bw' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Black & White</button>
-                      <button type="button" (click)="updateOption('colorMode', 'color')" [class]="printOptions().colorMode === 'color' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Color</button>
-                    </div>
-                  </div>
-
-                  <!-- Sided -->
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700">Sides</label>
-                    <div class="mt-2 grid grid-cols-2 gap-3">
-                      <button type="button" (click)="updateOption('sides', 'single')" [class]="printOptions().sides === 'single' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Single-Sided</button>
-                      <button type="button" (click)="updateOption('sides', 'double')" [class]="printOptions().sides === 'double' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Double-Sided</button>
-                    </div>
-                  </div>
-
-                  <!-- Fast Track Option -->
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700">Priority</label>
-                    <div class="mt-2 bg-gray-50 rounded-lg p-4 flex items-center justify-between">
-                      <div>
-                        <h4 class="font-semibold text-gray-800">Fast Track</h4>
-                        <p class="text-xs text-gray-500">Prioritize your job for a {{ fastOrderSurchargePercent() }}% surcharge.</p>
-                      </div>
-                      <!-- Toggle Switch -->
-                      <button type="button" (click)="updateOption('isFastOrder', !printOptions().isFastOrder)" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" [class]="printOptions().isFastOrder ? 'bg-primary' : 'bg-gray-200'" role="switch" [attr.aria-checked]="printOptions().isFastOrder">
-                        <span class="sr-only">Use setting</span>
-                        <span aria-hidden="true" class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" [class]="printOptions().isFastOrder ? 'translate-x-5' : 'translate-x-0'"></span>
-                      </button>
-                    </div>
-                  </div>
-
-                </div>
+          <div class="max-w-6xl mx-auto">
+            @if (isProcessingFile()) {
+              <div class="flex flex-col items-center justify-center bg-white p-8 rounded-xl shadow-lg border border-gray-200 h-96">
+                <svg class="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="mt-4 text-lg font-semibold text-gray-700">Processing your document...</p>
+                <p class="text-sm text-gray-500">Getting things ready for you.</p>
               </div>
-
-              <!-- Right Side: Summary & Payment -->
-              <div class="lg:col-span-1">
-                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 sticky top-28">
-                  <div class="flex justify-between items-center mb-4 border-b pb-3">
-                    <h3 class="text-xl font-bold text-gray-900">Order Summary</h3>
-                    <button (click)="toggleRatesModal()" class="text-xs font-semibold text-primary hover:underline">View Rates</button>
-                  </div>
-                  <div class="space-y-3 text-sm text-gray-600">
-                    <div class="flex justify-between"><span>Color Mode:</span> <span class="font-medium text-gray-900 capitalize">{{printOptions().colorMode}}</span></div>
-                    <div class="flex justify-between"><span>Sides:</span> <span class="font-medium text-gray-900 capitalize">{{printOptions().sides}}-sided</span></div>
-                    <div class="flex justify-between"><span>Copies:</span> <span class="font-medium text-gray-900">{{printOptions().copies}}</span></div>
-                    <div class="flex justify-between"><span>Estimated Wait:</span> <span class="font-medium text-gray-900">{{estimatedWaitTime()}} mins</span></div>
-                  </div>
-                  <div class="mt-6 pt-4 border-t">
-                    @if(fastOrderSurcharge() > 0) {
-                      <div class="flex justify-between items-center text-sm text-gray-600 mb-2">
-                        <span>Base Cost</span>
-                        <span class="font-medium text-gray-900">₹{{(baseCost() || 0).toFixed(2)}}</span>
-                      </div>
-                      <div class="flex justify-between items-center text-sm text-red-600">
-                        <span>Fast Track Surcharge</span>
-                        <span class="font-medium">₹{{(fastOrderSurcharge() || 0).toFixed(2)}}</span>
+            } @else {
+              @if (uploadedFile(); as file) {
+              <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Left Side: File Info & Options -->
+                <div class="lg:col-span-2 space-y-8">
+                  <!-- Document Preview -->
+                  <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Document Preview</h3>
+                    @if(filePreviewUrl(); as previewUrl) {
+                      <div class="mb-4 border rounded-lg overflow-hidden flex justify-center bg-gray-100">
+                        <img [src]="previewUrl" alt="Document preview" class="max-h-96 object-contain">
                       </div>
                     }
-                    <div class="flex justify-between items-baseline mt-2">
-                      <span class="text-lg font-bold text-gray-900">Total</span>
-                      <span class="text-3xl font-extrabold text-primary">₹{{(totalCost() || 0).toFixed(2)}}</span>
+                     <div class="bg-primary-50 border border-primary-200 rounded-lg p-4 flex items-center space-x-4">
+                      <svg class="w-10 h-10 text-primary flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                      </svg>
+                      <div>
+                        <p class="font-bold text-gray-800 truncate">{{ file.name }}</p>
+                        <p class="text-sm text-gray-600">{{ (file.size / 1024 || 0).toFixed(2) }} KB ・ {{ printOptions().totalPages }} Pages</p>
+                      </div>
                     </div>
                   </div>
-                  <button (click)="submitJob()" class="w-full mt-6 bg-primary hover:bg-primary-600 text-white font-bold py-3 px-4 rounded-lg text-lg transition duration-300 flex items-center justify-center space-x-2">
-                    <span>Pay & Add to Queue</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
-                      <path fill-rule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clip-rule="evenodd" />
-                    </svg>
-                  </button>
+
+                  <!-- Print Options -->
+                  <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-200">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6 border-b pb-4">Configure Print Job</h2>
+                    <div class="space-y-6">
+                      <!-- Copies -->
+                      <div>
+                        <label for="copies" class="block text-sm font-medium text-gray-700 mb-1">Number of Copies</label>
+                        <input type="number" id="copies" [value]="printOptions().copies" (input)="updateOption('copies', $event.target.value)" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary" min="1">
+                      </div>
+
+                      <!-- Page Range -->
+                      <div>
+                          <label class="block text-sm font-medium text-gray-700 mb-1">Page Range</label>
+                          <div class="flex items-center space-x-4">
+                              <div class="flex items-center">
+                                  <input id="pages-all" name="pages" type="radio" [checked]="printOptions().pages === 'all'" (change)="updateOption('pages', 'all')" class="h-4 w-4 text-primary border-gray-300 focus:ring-primary">
+                                  <label for="pages-all" class="ml-2 block text-sm text-gray-900">All</label>
+                              </div>
+                              <div class="flex items-center">
+                                  <input id="pages-custom" name="pages" type="radio" [checked]="printOptions().pages !== 'all'" (change)="updateOption('pages', '')" class="h-4 w-4 text-primary border-gray-300 focus:ring-primary">
+                                  <label for="pages-custom" class="ml-2 block text-sm text-gray-900">Custom</label>
+                              </div>
+                          </div>
+                          @if (printOptions().pages !== 'all') {
+                              <input type="text" [value]="printOptions().pages" (input)="updateOption('pages', $event.target.value)" placeholder="e.g., 1-5, 8, 11-13" class="mt-2 w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
+                          }
+                      </div>
+
+                      <!-- Color Mode -->
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700">Color</label>
+                        <div class="mt-2 grid grid-cols-2 gap-3">
+                          <button type="button" (click)="updateOption('colorMode', 'bw')" [class]="printOptions().colorMode === 'bw' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Black & White</button>
+                          <button type="button" (click)="updateOption('colorMode', 'color')" [class]="printOptions().colorMode === 'color' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Color</button>
+                        </div>
+                      </div>
+
+                      <!-- Sided -->
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700">Sides</label>
+                        <div class="mt-2 grid grid-cols-2 gap-3">
+                          <button type="button" (click)="updateOption('sides', 'single')" [class]="printOptions().sides === 'single' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Single-Sided</button>
+                          <button type="button" (click)="updateOption('sides', 'double')" [class]="printOptions().sides === 'double' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Double-Sided</button>
+                        </div>
+                      </div>
+
+                      <!-- Fast Track Option -->
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700">Priority</label>
+                        <div class="mt-2 bg-gray-50 rounded-lg p-4 flex items-center justify-between">
+                          <div>
+                            <h4 class="font-semibold text-gray-800">Fast Track</h4>
+                            <p class="text-xs text-gray-500">Prioritize your job for a {{ fastOrderSurchargePercent() }}% surcharge.</p>
+                          </div>
+                          <!-- Toggle Switch -->
+                          <button type="button" (click)="updateOption('isFastOrder', !printOptions().isFastOrder)" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" [class]="printOptions().isFastOrder ? 'bg-primary' : 'bg-gray-200'" role="switch" [attr.aria-checked]="printOptions().isFastOrder">
+                            <span class="sr-only">Use setting</span>
+                            <span aria-hidden="true" class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" [class]="printOptions().isFastOrder ? 'translate-x-5' : 'translate-x-0'"></span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right Side: Summary & Payment -->
+                <div class="lg:col-span-1">
+                  <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 sticky top-28">
+                    <div class="flex justify-between items-center mb-4 border-b pb-3">
+                      <h3 class="text-xl font-bold text-gray-900">Order Summary</h3>
+                      <button (click)="toggleRatesModal()" class="text-xs font-semibold text-primary hover:underline">View Rates</button>
+                    </div>
+                    <div class="space-y-3 text-sm text-gray-600">
+                      <div class="flex justify-between"><span>Color Mode:</span> <span class="font-medium text-gray-900 capitalize">{{printOptions().colorMode}}</span></div>
+                      <div class="flex justify-between"><span>Sides:</span> <span class="font-medium text-gray-900 capitalize">{{printOptions().sides}}-sided</span></div>
+                      <div class="flex justify-between"><span>Copies:</span> <span class="font-medium text-gray-900">{{printOptions().copies}}</span></div>
+                      <div class="flex justify-between"><span>Estimated Wait:</span> <span class="font-medium text-gray-900">{{estimatedWaitTime()}} mins</span></div>
+                    </div>
+                    <div class="mt-6 pt-4 border-t">
+                      @if(fastOrderSurcharge() > 0) {
+                        <div class="flex justify-between items-center text-sm text-gray-600 mb-2">
+                          <span>Base Cost</span>
+                          <span class="font-medium text-gray-900">₹{{(baseCost() || 0).toFixed(2)}}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm text-red-600">
+                          <span>Fast Track Surcharge</span>
+                          <span class="font-medium">₹{{(fastOrderSurcharge() || 0).toFixed(2)}}</span>
+                        </div>
+                      }
+                      <div class="flex justify-between items-baseline mt-2">
+                        <span class="text-lg font-bold text-gray-900">Total</span>
+                        <span class="text-3xl font-extrabold text-primary">₹{{(totalCost() || 0).toFixed(2)}}</span>
+                      </div>
+                    </div>
+                    <button (click)="submitJob()" class="w-full mt-6 bg-primary hover:bg-primary-600 text-white font-bold py-3 px-4 rounded-lg text-lg transition duration-300 flex items-center justify-center space-x-2">
+                      <span>Pay & Add to Queue</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                        <path fill-rule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clip-rule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
+            }
           }
+          </div>
         }
 
         <!-- TRACKING STATE -->
@@ -265,7 +351,8 @@
                         [class]="{
                           'bg-yellow-100 text-yellow-800': myJob.status === 'Queued',
                           'bg-blue-100 text-blue-800': myJob.status === 'Printing',
-                          'bg-green-100 text-green-800': myJob.status === 'Ready'
+                          'bg-green-100 text-green-800': myJob.status === 'Ready',
+                          'bg-gray-200 text-gray-800': myJob.status === 'Collected'
                         }">
                         {{myJob.status}}
                       </span>
@@ -277,9 +364,17 @@
 
               <!-- Live Print Queue -->
               <div class="lg:col-span-2 bg-white p-8 rounded-xl shadow-lg border border-gray-200">
-                <h2 class="text-2xl font-bold text-gray-900 mb-6 border-b pb-4">Live Print Queue</h2>
+                <div class="flex justify-between items-center mb-6 border-b pb-4">
+                  <h2 class="text-2xl font-bold text-gray-900">Live Print Queue</h2>
+                  <button (click)="refreshCustomerQueue()" [disabled]="isCustomerRefreshing()" class="p-2 rounded-md hover:bg-gray-200 transition text-gray-500 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg [class]="isCustomerRefreshing() ? 'animate-spin' : ''" class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M4 4l1.5 1.5A9 9 0 0120.5 15M20 20l-1.5-1.5A9 9 0 003.5 9" />
+                    </svg>
+                    <span class="sr-only">Refresh Queue</span>
+                  </button>
+                </div>
                 <div class="space-y-3">
-                  @for (job of printQueue(); track job.id) {
+                  @for (job of customerLiveQueue(); track job.id) {
                     <div class="p-4 rounded-lg transition-all duration-300"
                         [class]="{
                           'bg-primary-50 border border-primary-200 shadow-md': job.isUserJob,
@@ -303,7 +398,8 @@
                             [class]="{
                               'bg-yellow-100 text-yellow-800': job.status === 'Queued',
                               'bg-blue-100 text-blue-800': job.status === 'Printing',
-                              'bg-green-100 text-green-800': job.status === 'Ready'
+                              'bg-green-100 text-green-800': job.status === 'Ready',
+                              'bg-gray-200 text-gray-800': job.status === 'Collected'
                             }">
                             {{job.status}}
                           </span>
@@ -323,11 +419,41 @@
       <!-- ADMIN DASHBOARD VIEW -->
       <div class="max-w-7xl mx-auto w-full">
         <div class="flex justify-between items-center mb-6">
-            <h2 class="text-3xl font-bold text-gray-900">Admin Dashboard</h2>
-            <button (click)="toggleWalkinOrderModal()" class="flex items-center space-x-2 bg-primary hover:bg-primary-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 00-1.5 0v2.5h-2.5a.75.75 0 000 1.5h2.5v2.5a.75.75 0 001.5 0v-2.5h2.5a.75.75 0 000-1.5h-2.5v-2.5z" clip-rule="evenodd" /></svg>
-                <span>Add Walk-in</span>
-            </button>
+            <div class="flex items-center space-x-4">
+               <h2 class="text-3xl font-bold text-gray-900">Admin Dashboard</h2>
+               <div class="flex items-center space-x-4 pt-1">
+                 <button (click)="refreshDashboardData()" [disabled]="isRefreshing()" class="p-2 rounded-md hover:bg-gray-200 transition text-gray-500 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg [class]="isRefreshing() ? 'animate-spin' : ''" class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M4 4l1.5 1.5A9 9 0 0120.5 15M20 20l-1.5-1.5A9 9 0 003.5 9" />
+                    </svg>
+                    <span class="sr-only">Refresh</span>
+                 </button>
+                 <div class="flex items-center space-x-2">
+                    <span class="text-sm font-medium text-gray-600">Auto-Refresh (30s):</span>
+                    <button type="button" (click)="isAutoRefreshEnabled.set(!isAutoRefreshEnabled())" 
+                            class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" 
+                            [class]="isAutoRefreshEnabled() ? 'bg-green-600' : 'bg-gray-200'" 
+                            role="switch" [attr.aria-checked]="isAutoRefreshEnabled()">
+                        <span class="sr-only">Toggle Auto-Refresh</span>
+                        <span aria-hidden="true" 
+                              class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" 
+                              [class]="isAutoRefreshEnabled() ? 'translate-x-5' : 'translate-x-0'"></span>
+                    </button>
+                </div>
+               </div>
+            </div>
+            <div class="flex items-center space-x-3">
+              <button (click)="toggleScannerModal()" class="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M0 4a2 2 0 012-2h16a2 2 0 012 2v12a2 2 0 01-2 2H2a2 2 0 01-2-2V4zm11 9a1 1 0 10-2 0v2a1 1 0 102 0v-2zm-4-4a1 1 0 10-2 0v6a1 1 0 102 0V9zm8-4a1 1 0 00-1 1v10a1 1 0 102 0V6a1 1 0 00-1-1zM5 9a1 1 0 10-2 0v6a1 1 0 102 0V9z" />
+                </svg>
+                <span>Scan QR</span>
+              </button>
+              <button (click)="toggleWalkinOrderModal()" class="flex items-center space-x-2 bg-primary hover:bg-primary-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 00-1.5 0v2.5h-2.5a.75.75 0 000 1.5h2.5v2.5a.75.75 0 001.5 0v-2.5h2.5a.75.75 0 000-1.5h-2.5v-2.5z" clip-rule="evenodd" /></svg>
+                  <span>Add Walk-in</span>
+              </button>
+            </div>
         </div>
         
         <!-- Summary Cards -->
@@ -469,8 +595,8 @@
             }
             @case('rates') {
               <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                <div class="p-4 border-b">
-                  <h3 class="text-xl font-bold">Manage Printing Rates</h3>
+                <div class="p-4 border-b bg-primary-50">
+                  <h3 class="text-xl font-bold text-primary-700">Manage Printing Rates</h3>
                 </div>
                 <div class="p-6">
                   <form (submit)="$event.preventDefault(); saveRates()">

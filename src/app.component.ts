@@ -1,5 +1,10 @@
+
 import { Component, ChangeDetectionStrategy, signal, computed, OnDestroy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
+
+// --- Type declaration for the QR Code scanner library ---
+declare var Html5Qrcode: any;
+declare var pdfjsLib: any;
 
 // --- Interfaces for our data models ---
 interface PrintOptions {
@@ -24,6 +29,17 @@ interface PrintJob {
   isFastOrder: boolean;
 }
 
+interface PrintRates {
+  bw: number;
+  color: number;
+  discount: number; // Stored as multiplier, e.g. 0.9
+  surcharge: number; // Stored as multiplier, e.g. 1.25
+}
+
+// --- Local Storage Keys ---
+const QUEUE_STORAGE_KEY = 'printSmartQueue';
+const RATES_STORAGE_KEY = 'printSmartRates';
+
 
 @Component({
   selector: 'app-root',
@@ -46,20 +62,38 @@ export class AppComponent implements OnDestroy {
   });
   userJob = signal<PrintJob | null>(null);
   printQueue = signal<PrintJob[]>([]);
+  isCustomerRefreshing = signal<boolean>(false);
   
   // --- ADMIN STATE ---
   isLoggedIn = signal<boolean>(false);
   adminView = signal<'queue' | 'completed' | 'payments' | 'rates'>('queue');
   queueFilter = signal<'all' | 'queued' | 'printing'>('all');
   showSaveConfirmation = signal<boolean>(false);
+  isRefreshing = signal<boolean>(false);
+  isAutoRefreshEnabled = signal<boolean>(false);
+  private autoRefreshTimer: any;
+
 
   // --- WALK-IN ORDER STATE ---
   showWalkinOrderModal = signal<boolean>(false);
   walkinOrderPages = signal<number>(1);
   walkinOrderColorMode = signal<'bw' | 'color'>('bw');
+  walkinOrderCopies = signal<number>(1);
+  walkinOrderSides = signal<'single' | 'double'>('single');
+  walkinOrderIsFastOrder = signal<boolean>(false);
 
   // --- RATES MODAL STATE ---
   showRatesModal = signal<boolean>(false);
+
+  // --- SCANNER STATE ---
+  private html5QrCode: any;
+  showScannerModal = signal<boolean>(false);
+  scannerMessage = signal<{ type: 'success' | 'error' | 'info', text: string } | null>(null);
+  
+  // --- FILE PROCESSING STATE ---
+  isProcessingFile = signal<boolean>(false);
+  filePreviewUrl = signal<string | null>(null);
+
 
   // --- CONFIG & DYNAMIC RATES ---
   private queueInterval: any;
@@ -122,6 +156,12 @@ export class AppComponent implements OnDestroy {
     return jobsAhead * 2;
   });
 
+  customerLiveQueue = computed(() => {
+    const myJobId = this.userJob()?.id;
+    // Show all jobs that are not 'Collected', but always include the user's own job regardless of its status.
+    return this.printQueue().filter(job => job.status !== 'Collected' || job.id === myJobId);
+  });
+
   // --- ADMIN COMPUTED SIGNALS ---
   totalJobsToday = computed(() => this.printQueue().length);
   totalEarningsToday = computed(() => this.printQueue().reduce((sum, job) => sum + job.cost, 0));
@@ -129,7 +169,6 @@ export class AppComponent implements OnDestroy {
   filteredQueue = computed(() => {
     const queue = this.printQueue();
     const filter = this.queueFilter();
-    // Fix: The bitwise OR operator `|` was used instead of a comma `,` to separate array elements. This caused a type error because the expression was evaluated as a number, which is not assignable to `JobStatus`.
     const liveStatuses: JobStatus[] = ['Queued', 'Printing', 'Ready'];
     const liveQueue = queue.filter(job => liveStatuses.includes(job.status));
 
@@ -148,13 +187,30 @@ export class AppComponent implements OnDestroy {
 
   walkinOrderCost = computed(() => {
       const pages = this.walkinOrderPages();
+      const copies = this.walkinOrderCopies();
       const costPerPage = this.walkinOrderColorMode() === 'bw' ? this.costPerPageBw() : this.costPerPageColor();
-      return pages * costPerPage;
+      
+      let cost = pages * copies * costPerPage;
+
+      if (this.walkinOrderSides() === 'double') {
+          cost *= this.doubleSidedDiscount();
+      }
+
+      if (this.walkinOrderIsFastOrder()) {
+          cost *= this.fastOrderSurchargeMultiplier();
+      }
+
+      return cost;
   });
 
 
   constructor() {
-    this.initializeMockQueue();
+    this.loadStateFromStorage();
+    
+    // Auto-save the queue to local storage whenever it changes.
+    effect(() => {
+      localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(this.printQueue()));
+    });
     
     // Resets the rate editing form when the admin navigates to the rates tab
     effect(() => {
@@ -162,32 +218,130 @@ export class AppComponent implements OnDestroy {
         this.cancelRateChanges();
       }
     });
+
+    // Effect to manage the auto-refresh timer
+    effect((onCleanup) => {
+      this.stopAutoRefresh(); // Clear previous interval on re-run
+      const isEnabled = this.isAutoRefreshEnabled();
+
+      if (isEnabled && this.isLoggedIn()) {
+        this.autoRefreshTimer = setInterval(() => {
+          this.refreshDashboardData();
+        }, 30000); // 30 seconds
+      }
+  
+      onCleanup(() => {
+        this.stopAutoRefresh();
+      });
+    });
+  }
+
+  // --- DATA PERSISTENCE ---
+  private loadStateFromStorage(): void {
+    // Load Rates
+    try {
+      const savedRates = localStorage.getItem(RATES_STORAGE_KEY);
+      if (savedRates) {
+        const rates: PrintRates = JSON.parse(savedRates);
+        this.costPerPageBw.set(rates.bw);
+        this.costPerPageColor.set(rates.color);
+        this.doubleSidedDiscount.set(rates.discount);
+        this.fastOrderSurchargeMultiplier.set(rates.surcharge);
+      }
+    } catch (e) {
+      console.error('Failed to parse rates from localStorage', e);
+    }
+
+    // Load Queue
+    try {
+      const savedQueue = localStorage.getItem(QUEUE_STORAGE_KEY);
+      if (savedQueue) {
+        const queue: PrintJob[] = JSON.parse(savedQueue);
+        this.printQueue.set(queue);
+      } else {
+        this.initializeMockQueue(); // Load default data if nothing is saved
+      }
+    } catch (e) {
+      console.error('Failed to parse queue from localStorage', e);
+      this.initializeMockQueue(); // Load default data on error
+    }
   }
 
   // --- COMPONENT LOGIC & METHODS ---
 
-  handleFileSelect(event: Event): void {
+  async handleFileSelect(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
-      const file = input.files[0];
-      this.uploadedFile.set(file);
-      
-      const simulatedPageCount = Math.floor(Math.random() * (100 - 5 + 1)) + 5;
-      
-      this.printOptions.update(options => ({
-        ...options,
-        totalPages: simulatedPageCount,
-        pages: 'all'
-      }));
+    if (!input.files || input.files.length === 0) return;
 
-      this.appState.set('options');
+    const file = input.files[0];
+    this.isProcessingFile.set(true);
+    this.uploadedFile.set(file);
+    this.filePreviewUrl.set(null);
+
+    // Reset options and move to options screen to show loader
+    this.printOptions.set({
+      pages: 'all', totalPages: 0, colorMode: 'bw', sides: 'single', copies: 1, isFastOrder: false
+    });
+    this.appState.set('options');
+
+    try {
+      if (file.type === 'application/pdf') {
+        await this.processPdf(file);
+      } else if (file.type.startsWith('image/')) {
+        this.processImage(file);
+      } else {
+        console.error('Unsupported file type:', file.type);
+        alert('Unsupported file type. Please upload a PDF or an image.');
+        this.startOver();
+      }
+    } catch (error) {
+      console.error('Error processing file:', error);
+      alert('There was an error processing your file. Please try again.');
+      this.startOver();
+    } finally {
+      this.isProcessingFile.set(false);
     }
+  }
+
+  private async processPdf(file: File): Promise<void> {
+    const arrayBuffer = await file.arrayBuffer();
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs`;
+
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    this.printOptions.update(options => ({ ...options, totalPages: pdf.numPages }));
+
+    // Generate preview of the first page
+    const page = await pdf.getPage(1);
+    const viewport = page.getViewport({ scale: 1.5 });
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+
+    if (context) {
+      const renderContext = { canvasContext: context, viewport: viewport };
+      await page.render(renderContext).promise;
+      this.filePreviewUrl.set(canvas.toDataURL('image/jpeg'));
+    }
+  }
+
+  private processImage(file: File): void {
+    this.printOptions.update(options => ({ ...options, totalPages: 1 }));
+    const objectUrl = URL.createObjectURL(file);
+    this.filePreviewUrl.set(objectUrl);
   }
   
   startOver(): void {
     this.uploadedFile.set(null);
     this.userJob.set(null);
     this.appState.set('upload');
+
+    const currentPreview = this.filePreviewUrl();
+    if (currentPreview && currentPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(currentPreview);
+    }
+    this.filePreviewUrl.set(null);
+
     this.printOptions.set({
         pages: 'all',
         totalPages: 0,
@@ -227,6 +381,19 @@ export class AppComponent implements OnDestroy {
     this.appState.set('tracking');
   }
 
+  async refreshCustomerQueue(): Promise<void> {
+    if (this.isCustomerRefreshing()) return;
+
+    this.isCustomerRefreshing.set(true);
+    // Simulate a quick refresh latency
+    await new Promise(resolve => setTimeout(resolve, 500)); 
+    
+    // This is the same logic the admin refresh and the timer uses.
+    this.updateQueue(); 
+    
+    this.isCustomerRefreshing.set(false);
+  }
+
   // --- ADMIN METHODS ---
   login(): void {
     this.isLoggedIn.set(true);
@@ -235,6 +402,7 @@ export class AppComponent implements OnDestroy {
 
   logout(): void {
     this.isLoggedIn.set(false);
+    this.isAutoRefreshEnabled.set(false); // This will stop the timer via the effect
     this.startQueueSimulation();
   }
   
@@ -246,12 +414,35 @@ export class AppComponent implements OnDestroy {
       );
   }
 
+  async refreshDashboardData(): Promise<void> {
+    if (this.isRefreshing()) return;
+
+    this.isRefreshing.set(true);
+    // Simulate network latency for a better UX feel
+    await new Promise(resolve => setTimeout(resolve, 500)); 
+    
+    // In a real app, you might re-fetch from an API. Here we simulate updates by running the queue logic.
+    this.updateQueue(); 
+    
+    this.isRefreshing.set(false);
+  }
+
+  private stopAutoRefresh(): void {
+    if (this.autoRefreshTimer) {
+      clearInterval(this.autoRefreshTimer);
+      this.autoRefreshTimer = null;
+    }
+  }
+
   toggleWalkinOrderModal(): void {
     this.showWalkinOrderModal.update(v => !v);
     // Reset form on close
     if (!this.showWalkinOrderModal()) {
         this.walkinOrderPages.set(1);
         this.walkinOrderColorMode.set('bw');
+        this.walkinOrderCopies.set(1);
+        this.walkinOrderSides.set('single');
+        this.walkinOrderIsFastOrder.set(false);
     }
   }
 
@@ -265,7 +456,7 @@ export class AppComponent implements OnDestroy {
           isUserJob: false,
           token: token,
           cost: this.walkinOrderCost(),
-          isFastOrder: false,
+          isFastOrder: this.walkinOrderIsFastOrder(),
       };
       this.printQueue.update(queue => [newJob, ...queue].sort((a, b) => (b.isFastOrder ? 1 : 0) - (a.isFastOrder ? 1 : 0) || a.pages - b.pages));
       this.toggleWalkinOrderModal();
@@ -286,8 +477,19 @@ export class AppComponent implements OnDestroy {
     const newRates = this.editableRates();
     this.costPerPageBw.set(newRates.bw);
     this.costPerPageColor.set(newRates.color);
-    this.doubleSidedDiscount.set(1 - (newRates.discount / 100));
-    this.fastOrderSurchargeMultiplier.set(1 + (newRates.surcharge / 100));
+    const discountMultiplier = 1 - (newRates.discount / 100);
+    this.doubleSidedDiscount.set(discountMultiplier);
+    const surchargeMultiplier = 1 + (newRates.surcharge / 100);
+    this.fastOrderSurchargeMultiplier.set(surchargeMultiplier);
+
+    const ratesToSave: PrintRates = {
+        bw: newRates.bw,
+        color: newRates.color,
+        discount: discountMultiplier,
+        surcharge: surchargeMultiplier
+    };
+
+    localStorage.setItem(RATES_STORAGE_KEY, JSON.stringify(ratesToSave));
     
     this.showSaveConfirmation.set(true);
     setTimeout(() => this.showSaveConfirmation.set(false), 3000);
@@ -300,6 +502,66 @@ export class AppComponent implements OnDestroy {
       discount: this.doubleSidedDiscountPercent(),
       surcharge: this.fastOrderSurchargePercent()
     });
+  }
+
+  // --- QR SCANNER METHODS ---
+  toggleScannerModal(): void {
+    const isOpening = !this.showScannerModal();
+    this.showScannerModal.set(isOpening);
+    this.scannerMessage.set(null);
+
+    if (isOpening) {
+      // Defer scanner initialization to ensure the DOM element is visible
+      setTimeout(() => this.startScanner(), 100);
+    } else {
+      this.stopScanner();
+    }
+  }
+
+  private startScanner(): void {
+    const onScanSuccess = (decodedText: string) => {
+      this.html5QrCode.pause();
+      if (decodedText.startsWith('PrintSmart-Token:')) {
+        const token = decodedText.split(':')[1];
+        const job = this.printQueue().find(j => j.token === token);
+
+        if (!job) {
+          this.scannerMessage.set({ type: 'error', text: 'Invalid Token. Job not found.' });
+        } else if (job.status !== 'Ready') {
+          this.scannerMessage.set({ type: 'info', text: `Job ${token} is not ready. Status: ${job.status}` });
+        } else {
+          this.updateJobStatus(job.id, 'Collected');
+          this.scannerMessage.set({ type: 'success', text: `Success! Job ${token} marked as collected.` });
+        }
+      } else {
+        this.scannerMessage.set({ type: 'error', text: 'Invalid QR Code.' });
+      }
+
+      this.stopScanner();
+      setTimeout(() => this.toggleScannerModal(), 2500);
+    };
+
+    const onScanFailure = (error: string) => {
+      // This is called frequently, so we typically ignore it.
+      // console.warn(`QR error = ${error}`);
+    };
+
+    try {
+      this.html5QrCode = new Html5Qrcode('qr-reader');
+      const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+      this.html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure);
+    } catch(err) {
+      console.error("Error initializing scanner", err);
+      this.scannerMessage.set({ type: 'error', text: 'Could not start QR scanner.' });
+    }
+  }
+
+  private stopScanner(): void {
+    if (this.html5QrCode && this.html5QrCode.isScanning) {
+      this.html5QrCode.stop().catch((err: any) => {
+        console.error('Failed to stop QR scanner.', err);
+      });
+    }
   }
   
   // --- MOCK QUEUE SIMULATION ---
@@ -367,6 +629,12 @@ export class AppComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.stopQueueSimulation();
+    this.stopScanner();
+    this.stopAutoRefresh();
+    const currentPreview = this.filePreviewUrl();
+    if (currentPreview && currentPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(currentPreview);
+    }
   }
 
   getQrCodeUrl(token: string): string {
