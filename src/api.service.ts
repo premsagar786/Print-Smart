@@ -55,11 +55,6 @@ export class ApiService {
       localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(this.printQueue()));
     });
     
-    // Auto-save rates to local storage whenever they change.
-    effect(() => {
-        localStorage.setItem(RATES_STORAGE_KEY, JSON.stringify(this.rates()));
-    });
-    
     // Manage queue simulation based on login state
     effect(() => {
         if (this.isLoggedIn()) {
@@ -126,18 +121,27 @@ export class ApiService {
   // --- RATES MANAGEMENT ---
   updateRates(newRates: PrintRates): void {
     this.rates.set(newRates);
+    // Persist rates explicitly when they are updated by the admin.
+    localStorage.setItem(RATES_STORAGE_KEY, JSON.stringify(newRates));
   }
 
   // --- DATA PERSISTENCE & MOCK DATA ---
   private loadStateFromStorage(): void {
-    // Load Rates
+    // Load Rates and ensure they persist
     try {
       const savedRates = localStorage.getItem(RATES_STORAGE_KEY);
       if (savedRates) {
+        // If rates exist in storage, load them.
         this.rates.set(JSON.parse(savedRates));
+      } else {
+        // If no rates are saved (e.g., first visit), save the default rates
+        // to ensure they are persistent from the very first run.
+        localStorage.setItem(RATES_STORAGE_KEY, JSON.stringify(this.rates()));
       }
     } catch (e) {
-      console.error('Failed to parse rates from localStorage', e);
+      console.error('Failed to parse rates from localStorage, resetting to default.', e);
+      // If there's an error with the stored data, reset to default and save them.
+      localStorage.setItem(RATES_STORAGE_KEY, JSON.stringify(this.rates()));
     }
 
     // Load Queue
