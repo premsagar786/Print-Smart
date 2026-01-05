@@ -17,6 +17,7 @@ interface PrintOptions {
 }
 
 type JobStatus = 'Queued' | 'Printing' | 'Ready' | 'Collected';
+type PaymentStatus = 'Paid' | 'Unpaid';
 
 interface PrintJob {
   id: number;
@@ -27,6 +28,7 @@ interface PrintJob {
   token: string;
   cost: number;
   isFastOrder: boolean;
+  paymentStatus: PaymentStatus;
   file?: File;
 }
 
@@ -364,7 +366,7 @@ export class AppComponent implements OnDestroy {
     this.printOptions.update(options => ({...options, [key]: value}));
   }
 
-  submitJob(): void {
+  submitJob(paymentStatus: PaymentStatus): void {
     const file = this.uploadedFile();
     if (!file) return;
 
@@ -378,6 +380,7 @@ export class AppComponent implements OnDestroy {
       token: token,
       cost: this.totalCost(),
       isFastOrder: this.printOptions().isFastOrder,
+      paymentStatus: paymentStatus,
       file: file,
     };
     
@@ -419,6 +422,14 @@ export class AppComponent implements OnDestroy {
       );
   }
 
+  markAsPaid(jobId: number): void {
+    this.printQueue.update(queue => 
+      queue.map(job => 
+          job.id === jobId ? { ...job, paymentStatus: 'Paid' } : job
+      )
+    );
+  }
+
   printJobDocument(job: PrintJob): void {
     if (!job.file) {
       alert('This job has no printable file. It might be a walk-in order or from a previous session.');
@@ -436,22 +447,31 @@ export class AppComponent implements OnDestroy {
     
     document.body.appendChild(printFrame);
 
-    printFrame.src = fileURL;
+    const cleanup = () => {
+      URL.revokeObjectURL(fileURL);
+      if (document.body.contains(printFrame)) {
+        document.body.removeChild(printFrame);
+      }
+    };
+
     printFrame.onload = () => {
       try {
-        printFrame.contentWindow?.focus(); // Required for some browsers
+        // This may fail for PDFs in some browsers due to cross-origin security policies.
+        printFrame.contentWindow?.focus();
         printFrame.contentWindow?.print();
       } catch (error) {
         console.error('Printing failed:', error);
-        alert('Could not open print dialog. Please check browser console for details.');
+        // Provide a fallback for the user.
+        alert('Could not open print dialog automatically due to browser security.\nA new tab will open with your document. Please print it from there.');
+        window.open(fileURL, '_blank');
       } finally {
-        // The print dialog is blocking, but we use a timeout to be safe
-        setTimeout(() => {
-            URL.revokeObjectURL(fileURL);
-            document.body.removeChild(printFrame);
-        }, 1000);
+        // Cleanup after a delay to ensure the print dialog has time to open.
+        setTimeout(cleanup, 1000);
       }
     };
+    
+    // Setting the src triggers the load event.
+    printFrame.src = fileURL;
   }
 
   async refreshDashboardData(): Promise<void> {
@@ -497,6 +517,7 @@ export class AppComponent implements OnDestroy {
           token: token,
           cost: this.walkinOrderCost(),
           isFastOrder: this.walkinOrderIsFastOrder(),
+          paymentStatus: 'Unpaid',
       };
       this.printQueue.update(queue => [newJob, ...queue].sort((a, b) => (b.isFastOrder ? 1 : 0) - (a.isFastOrder ? 1 : 0) || a.pages - b.pages));
       this.toggleWalkinOrderModal();
@@ -620,11 +641,11 @@ export class AppComponent implements OnDestroy {
   initializeMockQueue(): void {
     // Initial dummy jobs
     this.printQueue.set([
-      { id: 1, fileName: 'thermodynamics_notes.pdf', pages: 45, status: 'Printing', isUserJob: false, token: 'PS-123', cost: 22.5, isFastOrder: false },
-      { id: 2, fileName: 'urgent_assignment.pdf', pages: 10, status: 'Queued', isUserJob: false, token: 'PS-126', cost: 12.5, isFastOrder: true },
-      { id: 3, fileName: 'lab_report_final.docx', pages: 12, status: 'Queued', isUserJob: false, token: 'PS-124', cost: 6.0, isFastOrder: false },
-      { id: 4, fileName: 'presentation_slides.ppt', pages: 30, status: 'Queued', isUserJob: false, token: 'PS-125', cost: 60.0, isFastOrder: false },
-      { id: 5, fileName: 'essay_draft.docx', pages: 5, status: 'Collected', isUserJob: false, token: 'PS-121', cost: 2.5, isFastOrder: false },
+      { id: 1, fileName: 'thermodynamics_notes.pdf', pages: 45, status: 'Printing', isUserJob: false, token: 'PS-123', cost: 22.5, isFastOrder: false, paymentStatus: 'Paid' },
+      { id: 2, fileName: 'urgent_assignment.pdf', pages: 10, status: 'Queued', isUserJob: false, token: 'PS-126', cost: 12.5, isFastOrder: true, paymentStatus: 'Paid' },
+      { id: 3, fileName: 'lab_report_final.docx', pages: 12, status: 'Queued', isUserJob: false, token: 'PS-124', cost: 6.0, isFastOrder: false, paymentStatus: 'Unpaid' },
+      { id: 4, fileName: 'presentation_slides.ppt', pages: 30, status: 'Queued', isUserJob: false, token: 'PS-125', cost: 60.0, isFastOrder: false, paymentStatus: 'Paid' },
+      { id: 5, fileName: 'essay_draft.docx', pages: 5, status: 'Collected', isUserJob: false, token: 'PS-121', cost: 2.5, isFastOrder: false, paymentStatus: 'Paid' },
     ]);
     
     if(!this.isLoggedIn()){

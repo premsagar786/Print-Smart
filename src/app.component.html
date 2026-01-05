@@ -308,12 +308,18 @@
                         <span class="text-3xl font-extrabold text-primary">₹{{(totalCost() || 0).toFixed(2)}}</span>
                       </div>
                     </div>
-                    <button (click)="submitJob()" class="w-full mt-6 bg-primary hover:bg-primary-600 text-white font-bold py-3 px-4 rounded-lg text-lg transition duration-300 flex items-center justify-center space-x-2">
-                      <span>Pay & Add to Queue</span>
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
-                        <path fill-rule="evenodd" d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z" clip-rule="evenodd" />
-                      </svg>
-                    </button>
+                    <div class="mt-6 space-y-3">
+                      <button (click)="submitJob('Paid')" class="w-full bg-primary hover:bg-primary-600 text-white font-bold py-3 px-4 rounded-lg text-lg transition duration-300 flex items-center justify-center space-x-2">
+                        <span>Pay Now & Add to Queue</span>
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
+                          <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zm-7.5 3.5a.5.5 0 01.5-.5h3a.5.5 0 010 1h-3a.5.5 0 01-.5-.5z" clip-rule="evenodd" />
+                        </svg>
+                      </button>
+                       <button (click)="submitJob('Unpaid')" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg text-sm transition duration-300">
+                        Add to Queue & Pay at Counter
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -338,16 +344,16 @@
                     <p class="text-sm text-primary-700">Your Token Number</p>
                     <p class="text-4xl font-extrabold text-primary">{{myJob.token}}</p>
                   </div>
-                  <div class="mt-4 text-left space-y-2">
+                  <div class="mt-4 text-left space-y-2 text-sm">
                     @if(myJob.isFastOrder) {
-                      <p class="flex items-center justify-center text-sm font-bold text-red-600 bg-red-100 px-3 py-1 rounded-full">
+                      <p class="flex items-center justify-center font-bold text-red-600 bg-red-100 px-3 py-1 rounded-full">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
                         Fast Track Job
                       </p>
                     }
-                    <p><span class="font-semibold">File:</span> {{myJob.fileName}}</p>
-                    <p><span class="font-semibold">Status:</span>
-                      <span class="font-bold px-2 py-1 rounded-full text-sm"
+                    <p><span class="font-semibold text-gray-600">File:</span> <span class="font-medium text-gray-900">{{myJob.fileName}}</span></p>
+                    <p><span class="font-semibold text-gray-600">Status:</span>
+                      <span class="font-bold px-2 py-1 rounded-full text-xs align-middle"
                         [class]="{
                           'bg-yellow-100 text-yellow-800': myJob.status === 'Queued',
                           'bg-blue-100 text-blue-800': myJob.status === 'Printing',
@@ -357,7 +363,16 @@
                         {{myJob.status}}
                       </span>
                     </p>
-                    <p><span class="font-semibold">Paid:</span> ₹{{(myJob.cost || 0).toFixed(2)}}</p>
+                    <p><span class="font-semibold text-gray-600">Payment:</span>
+                       <span class="font-bold px-2 py-1 rounded-full text-xs align-middle"
+                        [class]="{
+                          'bg-green-100 text-green-800': myJob.paymentStatus === 'Paid',
+                          'bg-gray-200 text-gray-800': myJob.paymentStatus === 'Unpaid'
+                        }">
+                        {{myJob.paymentStatus}}
+                      </span>
+                    </p>
+                    <p><span class="font-semibold text-gray-600">Paid Amount:</span> <span class="font-medium text-gray-900">₹{{(myJob.cost || 0).toFixed(2)}}</span></p>
                   </div>
                 </div>
               </div>
@@ -502,7 +517,6 @@
                                 <tr>
                                     <th scope="col" class="px-6 py-3">Token</th>
                                     <th scope="col" class="px-6 py-3">File Name</th>
-                                    <th scope="col" class="px-6 py-3">Pages</th>
                                     <th scope="col" class="px-6 py-3">Cost</th>
                                     <th scope="col" class="px-6 py-3">Status</th>
                                     <th scope="col" class="px-6 py-3">Actions</th>
@@ -518,8 +532,16 @@
                                       }
                                     </th>
                                     <td class="px-6 py-4 truncate max-w-xs">{{job.fileName}}</td>
-                                    <td class="px-6 py-4">{{job.pages}}</td>
-                                    <td class="px-6 py-4">₹{{(job.cost || 0).toFixed(2)}}</td>
+                                    <td class="px-6 py-4">
+                                      <span>₹{{(job.cost || 0).toFixed(2)}}</span>
+                                      <span class="ml-2 font-semibold px-2 py-0.5 rounded-full text-xs"
+                                        [class]="{
+                                          'bg-green-100 text-green-800': job.paymentStatus === 'Paid',
+                                          'bg-gray-200 text-gray-700': job.paymentStatus === 'Unpaid'
+                                        }">
+                                        {{job.paymentStatus}}
+                                      </span>
+                                    </td>
                                     <td class="px-6 py-4">
                                       <span class="font-semibold px-2.5 py-1 rounded-full text-xs"
                                         [class]="{
@@ -537,14 +559,17 @@
                                             </svg>
                                             Print
                                         </button>
+                                      @if(job.paymentStatus === 'Unpaid') {
+                                        <button (click)="markAsPaid(job.id)" class="font-medium text-white bg-green-500 hover:bg-green-600 px-3 py-1 rounded-md text-xs">Mark Paid</button>
+                                      }
                                       @if(job.status === 'Queued') {
-                                         <button (click)="updateJobStatus(job.id, 'Printing')" class="font-medium text-white bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded-md text-xs">Start Printing</button>
+                                         <button (click)="updateJobStatus(job.id, 'Printing')" class="font-medium text-white bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded-md text-xs">Start</button>
                                       }
                                       @if(job.status === 'Printing') {
-                                         <button (click)="updateJobStatus(job.id, 'Ready')" class="font-medium text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded-md text-xs">Mark as Ready</button>
+                                         <button (click)="updateJobStatus(job.id, 'Ready')" class="font-medium text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded-md text-xs">Ready</button>
                                       }
                                       @if(job.status === 'Ready') {
-                                         <button (click)="updateJobStatus(job.id, 'Collected')" class="font-medium text-white bg-gray-600 hover:bg-gray-700 px-3 py-1 rounded-md text-xs">Mark as Collected</button>
+                                         <button (click)="updateJobStatus(job.id, 'Collected')" class="font-medium text-white bg-gray-600 hover:bg-gray-700 px-3 py-1 rounded-md text-xs">Collect</button>
                                       }
                                     </td>
                                 </tr>
@@ -585,11 +610,22 @@
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm text-left text-gray-500">
                              <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                                <tr><th scope="col" class="px-6 py-3">Token</th><th scope="col" class="px-6 py-3">Details</th><th scope="col" class="px-6 py-3">Amount</th><th scope="col" class="px-6 py-3">Status</th></tr>
+                                <tr><th scope="col" class="px-6 py-3">Token</th><th scope="col" class="px-6 py-3">Details</th><th scope="col" class="px-6 py-3">Amount</th><th scope="col" class="px-6 py-3">Job Status</th><th scope="col" class="px-6 py-3">Payment Status</th></tr>
                             </thead>
                             <tbody>
                                 @for (job of printQueue(); track job.id) {
-                                <tr class="bg-white border-b hover:bg-gray-50"><th scope="row" class="px-6 py-4 font-bold text-primary whitespace-nowrap">{{job.token}}</th><td class="px-6 py-4">{{job.fileName}}</td><td class="px-6 py-4 font-medium text-gray-800">₹{{(job.cost || 0).toFixed(2)}}</td><td class="px-6 py-4"><span class="font-semibold px-2.5 py-1 rounded-full text-xs" [class]="{'bg-green-100 text-green-800': job.status === 'Collected', 'bg-gray-100 text-gray-700': job.status !== 'Collected'}">{{job.status === 'Collected' ? 'Paid & Collected' : 'Paid'}}</span></td></tr>
+                                <tr class="bg-white border-b hover:bg-gray-50"><th scope="row" class="px-6 py-4 font-bold text-primary whitespace-nowrap">{{job.token}}</th><td class="px-6 py-4">{{job.fileName}}</td><td class="px-6 py-4 font-medium text-gray-800">₹{{(job.cost || 0).toFixed(2)}}</td>
+                                <td class="px-6 py-4"><span class="font-semibold px-2.5 py-1 rounded-full text-xs" [class]="{
+                                    'bg-yellow-100 text-yellow-800': job.status === 'Queued',
+                                    'bg-blue-100 text-blue-800': job.status === 'Printing',
+                                    'bg-green-100 text-green-800': job.status === 'Ready',
+                                    'bg-gray-200 text-gray-800': job.status === 'Collected'
+                                }">{{job.status}}</span></td>
+                                <td class="px-6 py-4"><span class="font-semibold px-2.5 py-1 rounded-full text-xs" [class]="{
+                                    'bg-green-100 text-green-800': job.paymentStatus === 'Paid',
+                                    'bg-gray-200 text-gray-700': job.paymentStatus === 'Unpaid'
+                                }">{{job.paymentStatus}}</span></td>
+                                </tr>
                                 }
                             </tbody>
                         </table>
