@@ -1,4 +1,3 @@
-
 <!-- Rates Modal -->
 @if (showRatesModal()) {
   <div class="fixed inset-0 bg-gray-500 bg-opacity-25 backdrop-blur-sm flex items-center justify-center z-50" (click)="toggleRatesModal()">
@@ -294,7 +293,7 @@
                       <!-- Copies -->
                       <div>
                         <label for="copies" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Number of Copies</label>
-                        <input type="number" id="copies" [value]="printOptions().copies" (input)="updateOption('copies', $event.target.value)" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white" min="1">
+                        <input type="number" id="copies" [value]="printOptions().copies" (input)="updateOption('copies', +$event.target.value)" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white" min="1">
                       </div>
 
                       <!-- Page Range -->
