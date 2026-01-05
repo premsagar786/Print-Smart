@@ -142,8 +142,6 @@ MIT License — free and open for learning & improvement.
 
 ---
 
-If you want, I can also generate a **Markdown with badges** (build/test coverage, stars, deploy status) and a **detailed contribution section** too. Just ask! 🚀
-
 [1]: https://github.com/premsagar786/Print-Smart.git "GitHub - premsagar786/Print-Smart: PrintSmart is a web + mobile application that digitizes print requests, manages queues, and saves time for students and shop owners."
 [2]: https://www.ricoh-usa.com/en/glossary/print-queue?utm_source=chatgpt.com "What Is a Print Queue"
 [3]: https://en.wikipedia.org/wiki/Print_job?utm_source=chatgpt.com "Print job"
