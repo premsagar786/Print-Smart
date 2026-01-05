@@ -299,6 +299,11 @@ export class AppComponent implements OnDestroy {
     }, 3000);
   }
 
+  skipAndPayLater(): void {
+    this.closeCustomerInfoModal();
+    this.submitJob('Unpaid');
+  }
+
   closeCustomerInfoModal(): void {
     this.showCustomerInfoModal.set(false);
     this.customerName.set('');
