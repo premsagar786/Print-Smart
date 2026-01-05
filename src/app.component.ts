@@ -1,8 +1,7 @@
-
 import { Component, ChangeDetectionStrategy, signal, computed, OnDestroy, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-// FIX: Corrected import path for ApiService and added PaymentStatus type.
-import { ApiService, PrintJob, PaymentStatus } from './api.service';
+// FIX: Imported JobStatus to resolve a TypeScript error in the `filteredQueue` computed signal.
+import { ApiService, PrintJob, PaymentStatus, JobStatus } from './api.service';
 
 // --- Type declaration for external libraries ---
 declare var Html5Qrcode: any;
@@ -120,7 +119,9 @@ export class AppComponent implements OnDestroy {
   filteredQueue = computed(() => {
     const queue = this.apiService.printQueue();
     const filter = this.queueFilter();
-    const liveStatuses: ('Queued' | 'Printing' | 'Ready')[] = ['Queued', 'Printing', 'Ready'];
+    // FIX: Widened the type of `liveStatuses` to `JobStatus[]` to allow `Array.includes()` 
+    // to correctly type-check against `job.status` of type `JobStatus`.
+    const liveStatuses: JobStatus[] = ['Queued', 'Printing', 'Ready'];
     const liveQueue = queue.filter(job => liveStatuses.includes(job.status));
 
     if (filter === 'queued') return liveQueue.filter(job => job.status === 'Queued');
@@ -315,14 +316,8 @@ export class AppComponent implements OnDestroy {
   }
 
   // --- ADMIN METHODS ---
-  async login(): Promise<void> {
-    // In a real app, you'd have a login form. For now, we simulate with a password prompt.
-    const password = prompt("Enter admin password:");
-    if (await this.apiService.login(password || '')) {
-       // success
-    } else {
-        alert("Incorrect password.");
-    }
+  login(): void {
+    this.apiService.login();
   }
 
   logout(): void {

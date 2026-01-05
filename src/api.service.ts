@@ -71,14 +71,9 @@ export class ApiService {
   }
 
   // --- AUTHENTICATION ---
-  async login(password: string): Promise<boolean> {
-    // In a real app, this would be an HTTP call to a backend.
-    // For now, we'll use a simple hardcoded password.
-    if (password === 'admin') {
-      this.isLoggedIn.set(true);
-      return true;
-    }
-    return false;
+  login(): void {
+    // Simplified login - no password required. This acts as a toggle into admin mode.
+    this.isLoggedIn.set(true);
   }
 
   logout(): void {
