@@ -2,24 +2,24 @@
 <!-- Rates Modal -->
 @if (showRatesModal()) {
   <div class="fixed inset-0 bg-gray-500 bg-opacity-25 backdrop-blur-sm flex items-center justify-center z-50" (click)="toggleRatesModal()">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-8 m-4" (click)="$event.stopPropagation()">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md p-8 m-4" (click)="$event.stopPropagation()">
         <h2 class="text-2xl font-bold text-primary mb-6 text-center">Printing Rates</h2>
         <div class="space-y-4">
-          <div class="flex justify-between items-center bg-primary-50 p-3 rounded-lg">
-            <span class="font-medium text-primary-700">Black & White (per page)</span>
-            <span class="font-bold text-lg text-primary-600">₹{{costPerPageBw().toFixed(2)}}</span>
+          <div class="flex justify-between items-center bg-primary-50 dark:bg-gray-700 p-3 rounded-lg">
+            <span class="font-medium text-primary-700 dark:text-primary-300">Black & White (per page)</span>
+            <span class="font-bold text-lg text-primary-600 dark:text-primary-400">₹{{rates().bw.toFixed(2)}}</span>
           </div>
-          <div class="flex justify-between items-center bg-primary-50 p-3 rounded-lg">
-            <span class="font-medium text-primary-700">Color (per page)</span>
-            <span class="font-bold text-lg text-primary-600">₹{{costPerPageColor().toFixed(2)}}</span>
+          <div class="flex justify-between items-center bg-primary-50 dark:bg-gray-700 p-3 rounded-lg">
+            <span class="font-medium text-primary-700 dark:text-primary-300">Color (per page)</span>
+            <span class="font-bold text-lg text-primary-600 dark:text-primary-400">₹{{rates().color.toFixed(2)}}</span>
           </div>
-          <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
-            <span class="font-medium text-gray-700">Double-Sided Discount</span>
-            <span class="font-bold text-lg text-green-600">{{ doubleSidedDiscountPercent() }}% OFF</span>
+          <div class="flex justify-between items-center bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+            <span class="font-medium text-gray-700 dark:text-gray-300">Double-Sided Discount</span>
+            <span class="font-bold text-lg text-green-600 dark:text-green-400">{{ doubleSidedDiscountPercent() }}% OFF</span>
           </div>
-          <div class="flex justify-between items-center bg-red-50 p-3 rounded-lg border border-red-200">
-            <span class="font-medium text-red-700">Fast Track Surcharge</span>
-            <span class="font-bold text-lg text-red-600">+{{ fastOrderSurchargePercent() }}%</span>
+          <div class="flex justify-between items-center bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-500/30">
+            <span class="font-medium text-red-700 dark:text-red-400">Fast Track Surcharge</span>
+            <span class="font-bold text-lg text-red-600 dark:text-red-400">+{{ fastOrderSurchargePercent() }}%</span>
           </div>
         </div>
         <div class="mt-8 flex justify-center">
@@ -29,57 +29,122 @@
   </div>
 }
 
+<!-- Customer Info Modal -->
+@if (showCustomerInfoModal()) {
+  <div class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50" (click)="closeCustomerInfoModal()">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md p-8 m-4" (click)="$event.stopPropagation()">
+        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">Customer Details</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Please provide your details for the order.</p>
+        <form (submit)="$event.preventDefault(); proceedToPayment()">
+            <div class="space-y-4">
+                <div>
+                    <label for="customer-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
+                    <input type="text" id="customer-name" [value]="customerName()" (input)="customerName.set($event.target.value)" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="e.g., Rohan Kumar">
+                </div>
+                 <div>
+                    <label for="upi-id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">UPI ID (VPA)</label>
+                    <input type="text" id="upi-id" [value]="upiId()" (input)="upiId.set($event.target.value)" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="e.g., rohan@okbank">
+                </div>
+                 @if(customerFormError(); as error) {
+                  <p class="text-sm text-red-600 dark:text-red-400">{{ error }}</p>
+                 }
+            </div>
+            <div class="mt-8 flex justify-end space-x-3">
+                <button type="button" (click)="closeCustomerInfoModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
+                <button type="submit" class="px-6 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-600">Proceed to Pay</button>
+            </div>
+        </form>
+    </div>
+  </div>
+}
+
+<!-- Payment Gateway Modal -->
+@if (showPaymentGatewayModal()) {
+  <div class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-sm p-8 m-4 text-center">
+        <div class="flex justify-center items-center mb-4">
+            <svg class="w-6 h-6 mr-2 text-primary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" /></svg>
+            <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100">SmartPay Secure Gateway</h2>
+        </div>
+
+        @if (paymentStatus() === 'waiting') {
+            <p class="text-sm text-gray-600 dark:text-gray-400">Scan QR to pay <span class="font-bold text-primary">₹{{ totalCost().toFixed(2) }}</span></p>
+            <div class="flex justify-center my-4">
+                <img [src]="getQrCodeUrl(userJob()?.token || 'new')" alt="Simulated UPI QR Code" class="rounded-lg border-4 border-gray-200 dark:border-gray-600 p-1 bg-white">
+            </div>
+            <div class="flex items-center justify-center text-gray-600 dark:text-gray-300">
+                <svg class="animate-spin h-5 w-5 mr-3 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Waiting for payment confirmation...</span>
+            </div>
+        }
+        @if (paymentStatus() === 'confirmed') {
+            <div class="flex flex-col items-center justify-center my-4 py-8">
+                <svg class="h-20 w-20 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-4">Payment Successful!</h3>
+                <p class="text-gray-600 dark:text-gray-400">Your job is being added to the queue.</p>
+            </div>
+        }
+    </div>
+  </div>
+}
+
+
 <!-- Walk-in Order Modal -->
 @if (showWalkinOrderModal()) {
   <div class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50" (click)="toggleWalkinOrderModal()">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-8 m-4" (click)="$event.stopPropagation()">
-        <h2 class="text-2xl font-bold text-gray-800 mb-6">Add Walk-in Order</h2>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md p-8 m-4" (click)="$event.stopPropagation()">
+        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Add Walk-in Order</h2>
         <form (submit)="$event.preventDefault(); addWalkinOrder()">
             <div class="space-y-4">
                 <div>
-                    <label for="walkin-pages" class="block text-sm font-medium text-gray-700">Number of Pages</label>
-                    <input type="number" id="walkin-pages" [value]="walkinOrderPages()" (input)="walkinOrderPages.set(+$event.target.value)" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary" min="1">
+                    <label for="walkin-pages" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Number of Pages</label>
+                    <input type="number" id="walkin-pages" [value]="walkinOrderPages()" (input)="walkinOrderPages.set(+$event.target.value)" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white" min="1">
                 </div>
                  <div>
-                    <label for="walkin-copies" class="block text-sm font-medium text-gray-700">Number of Copies</label>
-                    <input type="number" id="walkin-copies" [value]="walkinOrderCopies()" (input)="walkinOrderCopies.set(+$event.target.value)" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary" min="1">
+                    <label for="walkin-copies" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Number of Copies</label>
+                    <input type="number" id="walkin-copies" [value]="walkinOrderCopies()" (input)="walkinOrderCopies.set(+$event.target.value)" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white" min="1">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Color Mode</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Color Mode</label>
                     <div class="mt-2 grid grid-cols-2 gap-3">
-                        <button type="button" (click)="walkinOrderColorMode.set('bw')" [class]="walkinOrderColorMode() === 'bw' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800'" class="px-4 py-2 text-sm font-semibold rounded-md transition">B&W</button>
-                        <button type="button" (click)="walkinOrderColorMode.set('color')" [class]="walkinOrderColorMode() === 'color' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Color</button>
+                        <button type="button" (click)="walkinOrderColorMode.set('bw')" [class]="walkinOrderColorMode() === 'bw' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200'" class="px-4 py-2 text-sm font-semibold rounded-md transition">B&W</button>
+                        <button type="button" (click)="walkinOrderColorMode.set('color')" [class]="walkinOrderColorMode() === 'color' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Color</button>
                     </div>
                 </div>
                  <div>
-                    <label class="block text-sm font-medium text-gray-700">Sides</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sides</label>
                     <div class="mt-2 grid grid-cols-2 gap-3">
-                        <button type="button" (click)="walkinOrderSides.set('single')" [class]="walkinOrderSides() === 'single' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Single-Sided</button>
-                        <button type="button" (click)="walkinOrderSides.set('double')" [class]="walkinOrderSides() === 'double' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Double-Sided</button>
+                        <button type="button" (click)="walkinOrderSides.set('single')" [class]="walkinOrderSides() === 'single' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Single-Sided</button>
+                        <button type="button" (click)="walkinOrderSides.set('double')" [class]="walkinOrderSides() === 'double' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Double-Sided</button>
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Priority</label>
-                    <div class="mt-2 bg-gray-50 rounded-lg p-3 flex items-center justify-between">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Priority</label>
+                    <div class="mt-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 flex items-center justify-between">
                       <div>
-                        <h4 class="font-semibold text-sm text-gray-800">Fast Track</h4>
-                        <p class="text-xs text-gray-500">+{{ fastOrderSurchargePercent() }}% surcharge</p>
+                        <h4 class="font-semibold text-sm text-gray-800 dark:text-gray-200">Fast Track</h4>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">+{{ fastOrderSurchargePercent() }}% surcharge</p>
                       </div>
-                      <button type="button" (click)="walkinOrderIsFastOrder.set(!walkinOrderIsFastOrder())" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" [class]="walkinOrderIsFastOrder() ? 'bg-primary' : 'bg-gray-200'" role="switch" [attr.aria-checked]="walkinOrderIsFastOrder()">
+                      <button type="button" (click)="walkinOrderIsFastOrder.set(!walkinOrderIsFastOrder())" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" [class]="walkinOrderIsFastOrder() ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-600'" role="switch" [attr.aria-checked]="walkinOrderIsFastOrder()">
                         <span class="sr-only">Fast Track</span>
                         <span aria-hidden="true" class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" [class]="walkinOrderIsFastOrder() ? 'translate-x-5' : 'translate-x-0'"></span>
                       </button>
                     </div>
                 </div>
-                <div class="pt-4 border-t">
+                <div class="pt-4 border-t dark:border-gray-700">
                     <div class="flex justify-between items-baseline">
-                        <span class="text-lg font-bold text-gray-900">Total Cost</span>
+                        <span class="text-lg font-bold text-gray-900 dark:text-gray-100">Total Cost</span>
                         <span class="text-2xl font-extrabold text-primary">₹{{(walkinOrderCost() || 0).toFixed(2)}}</span>
                     </div>
                 </div>
             </div>
             <div class="mt-6 flex justify-end space-x-3">
-                <button type="button" (click)="toggleWalkinOrderModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancel</button>
+                <button type="button" (click)="toggleWalkinOrderModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
                 <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-600">Add to Queue</button>
             </div>
         </form>
@@ -90,17 +155,17 @@
 <!-- QR Scanner Modal -->
 @if (showScannerModal()) {
   <div class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50" (click)="toggleScannerModal()">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-8 m-4" (click)="$event.stopPropagation()">
-        <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Scan Collection QR</h2>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-sm p-8 m-4" (click)="$event.stopPropagation()">
+        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4 text-center">Scan Collection QR</h2>
         <div class="w-full aspect-square flex items-center justify-center">
             @if (!scannerMessage()) {
-                <div id="qr-reader" class="w-full border-2 border-dashed border-gray-300 rounded-lg overflow-hidden"></div>
+                <div id="qr-reader" class="w-full border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden"></div>
             } @else {
                 <div class="p-4 rounded-lg text-center"
                      [class]="{
-                        'bg-green-100 text-green-800': scannerMessage()?.type === 'success',
-                        'bg-red-100 text-red-800': scannerMessage()?.type === 'error',
-                        'bg-blue-100 text-blue-800': scannerMessage()?.type === 'info'
+                        'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300': scannerMessage()?.type === 'success',
+                        'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300': scannerMessage()?.type === 'error',
+                        'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300': scannerMessage()?.type === 'info'
                      }">
                     <p class="font-bold text-lg">
                       @if(scannerMessage()?.type === 'success'){ Success }
@@ -111,7 +176,7 @@
                 </div>
             }
         </div>
-        <p class="text-center text-gray-500 mt-4 text-sm">
+        <p class="text-center text-gray-500 dark:text-gray-400 mt-4 text-sm">
           @if (!scannerMessage()) {
             Point your camera at the QR code on the customer's screen.
           } @else {
@@ -119,35 +184,43 @@
           }
         </p>
         <div class="mt-6 flex justify-center">
-            <button type="button" (click)="toggleScannerModal()" class="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancel</button>
+            <button type="button" (click)="toggleScannerModal()" class="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
         </div>
     </div>
   </div>
 }
 
 
-<div class="min-h-screen bg-gray-100 flex flex-col">
+<div class="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col">
   <!-- Header -->
-  <header class="bg-white shadow-md sticky top-0 z-40">
+  <header class="bg-white dark:bg-gray-800 shadow-md dark:border-b dark:border-gray-700 sticky top-0 z-40">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
       <div class="flex items-center space-x-3">
         <svg class="w-8 h-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.703.18 1.45.88 1.722l3.027.94c.338.105.683.105 1.021 0l3.027-.94a1.125 1.125 0 0 0 .88-1.722c-.24-.703-.78-1.221-1.48-1.396l-.21-.052a22.455 22.455 0 0 1-8.582 0l-.21.052Z" />
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3 3 0 0 0 3-3V9.75a3 3 0 0 0-3-3h-3.375c-.621 0-1.21.218-1.664.593l-2.083 1.858a.75.75 0 0 0 1.06 1.061L9.75 9.75h3.375c.621 0 1.125.504 1.125 1.125V15a1.125 1.125 0 0 1-1.125 1.125H9.75v1.875a3 3 0 0 0 3 3Z" />
         </svg>
-        <h1 class="text-2xl font-bold text-gray-800">PrintSmart</h1>
-        @if(isLoggedIn()){
-          <span class="bg-primary-100 text-primary-700 text-xs font-semibold px-2.5 py-0.5 rounded-full">Admin</span>
+        <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-100">PrintSmart</h1>
+        @if(apiService.isLoggedIn()){
+          <span class="bg-primary-100 text-primary-700 text-xs font-semibold px-2.5 py-0.5 rounded-full dark:bg-primary-900/50 dark:text-primary-300">Admin</span>
         }
       </div>
-      <div>
-        @if (!isLoggedIn()) {
+      <div class="flex items-center space-x-2 sm:space-x-4">
+        <button (click)="toggleDarkMode()" title="Toggle dark mode" class="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          @if (!isDarkMode()) {
+            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-6.364-.386l1.591-1.591M3 12h2.25m.386-6.364l1.591 1.591" /></svg>
+          } @else {
+            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
+          }
+          <span class="sr-only">Toggle dark mode</span>
+        </button>
+        @if (!apiService.isLoggedIn()) {
             @if (appState() !== 'upload') {
-              <button (click)="startOver()" class="text-sm font-medium text-gray-600 hover:text-primary transition duration-150 mr-4">Start Over</button>
+              <button (click)="startOver()" class="text-sm font-medium text-gray-600 hover:text-primary dark:text-gray-300 dark:hover:text-primary-400 transition duration-150">Start Over</button>
             }
-            <button (click)="login()" class="text-sm font-medium text-primary hover:text-primary-600 transition duration-150">Shop Owner Login</button>
+            <button (click)="login()" class="text-sm font-medium text-primary hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300 transition duration-150">Shop Owner Login</button>
         } @else {
-            <button (click)="logout()" class="text-sm font-medium text-red-600 hover:text-red-800 transition duration-150">Logout</button>
+            <button (click)="logout()" class="text-sm font-medium text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition duration-150">Logout</button>
         }
       </div>
     </div>
@@ -156,22 +229,22 @@
   <!-- Main Content -->
   <main class="flex-grow container mx-auto p-4 sm:p-6 lg:p-8">
     <!-- STUDENT VIEW -->
-    @if (!isLoggedIn()) {
+    @if (!apiService.isLoggedIn()) {
       @switch (appState()) {
         <!-- UPLOAD STATE -->
         @case ('upload') {
           <div class="text-center max-w-2xl mx-auto mt-12">
-            <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-200">
-              <h2 class="text-3xl font-bold text-gray-900 mb-2">Upload Your Document</h2>
-              <p class="text-gray-600 mb-8">Skip the queue. Print smart and save time.</p>
-              <div class="relative border-2 border-dashed border-gray-300 rounded-lg p-10 hover:border-primary-400 transition duration-300 group">
+            <div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+              <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-50 mb-2">Upload Your Document</h2>
+              <p class="text-gray-600 dark:text-gray-400 mb-8">Skip the queue. Print smart and save time.</p>
+              <div class="relative border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-10 hover:border-primary-400 dark:hover:border-primary-500 transition duration-300 group">
                 <input type="file" (change)="handleFileSelect($event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" id="file-upload" accept=".pdf,.jpeg,.jpg,.png,.heic,.heif">
                 <label for="file-upload" class="flex flex-col items-center justify-center space-y-4">
-                  <svg class="w-16 h-16 text-gray-400 group-hover:text-primary transition duration-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                  <svg class="w-16 h-16 text-gray-400 dark:text-gray-500 group-hover:text-primary transition duration-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l-3.75 3.75M12 9.75l3.75 3.75M17.25 12a4.5 4.5 0 0 1-9 0 4.5 4.5 0 0 1 9 0z" />
                   </svg>
-                  <p class="text-lg font-semibold text-gray-700">Drag & Drop or <span class="text-primary font-bold">Browse</span></p>
-                  <p class="text-sm text-gray-500">Supports: PDF, JPG, PNG, HEIC</p>
+                  <p class="text-lg font-semibold text-gray-700 dark:text-gray-300">Drag & Drop or <span class="text-primary font-bold">Browse</span></p>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Supports: PDF, JPG, PNG, HEIC</p>
                 </label>
               </div>
             </div>
@@ -182,13 +255,13 @@
         @case ('options') {
           <div class="max-w-6xl mx-auto">
             @if (isProcessingFile()) {
-              <div class="flex flex-col items-center justify-center bg-white p-8 rounded-xl shadow-lg border border-gray-200 h-96">
+              <div class="flex flex-col items-center justify-center bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 h-96">
                 <svg class="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <p class="mt-4 text-lg font-semibold text-gray-700">Processing your document...</p>
-                <p class="text-sm text-gray-500">Getting things ready for you.</p>
+                <p class="mt-4 text-lg font-semibold text-gray-700 dark:text-gray-300">Processing your document...</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Getting things ready for you.</p>
               </div>
             } @else {
               @if (uploadedFile(); as file) {
@@ -196,80 +269,80 @@
                 <!-- Left Side: File Info & Options -->
                 <div class="lg:col-span-2 space-y-8">
                   <!-- Document Preview -->
-                  <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-                    <h3 class="text-xl font-bold text-gray-900 mb-4">Document Preview</h3>
+                  <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">Document Preview</h3>
                     @if(filePreviewUrl(); as previewUrl) {
-                      <div class="mb-4 border rounded-lg overflow-hidden flex justify-center bg-gray-100">
+                      <div class="mb-4 border dark:border-gray-700 rounded-lg overflow-hidden flex justify-center bg-gray-100 dark:bg-gray-900">
                         <img [src]="previewUrl" alt="Document preview" class="max-h-96 object-contain">
                       </div>
                     }
-                     <div class="bg-primary-50 border border-primary-200 rounded-lg p-4 flex items-center space-x-4">
+                     <div class="bg-primary-50 dark:bg-gray-700 border border-primary-200 dark:border-primary-500/30 rounded-lg p-4 flex items-center space-x-4">
                       <svg class="w-10 h-10 text-primary flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                       </svg>
                       <div>
-                        <p class="font-bold text-gray-800 truncate">{{ file.name }}</p>
-                        <p class="text-sm text-gray-600">{{ (file.size / 1024 || 0).toFixed(2) }} KB ・ {{ printOptions().totalPages }} Pages</p>
+                        <p class="font-bold text-gray-800 dark:text-gray-200 truncate">{{ file.name }}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">{{ (file.size / 1024 || 0).toFixed(2) }} KB ・ {{ printOptions().totalPages }} Pages</p>
                       </div>
                     </div>
                   </div>
 
                   <!-- Print Options -->
-                  <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-200">
-                    <h2 class="text-2xl font-bold text-gray-900 mb-6 border-b pb-4">Configure Print Job</h2>
+                  <div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 border-b dark:border-gray-700 pb-4">Configure Print Job</h2>
                     <div class="space-y-6">
                       <!-- Copies -->
                       <div>
-                        <label for="copies" class="block text-sm font-medium text-gray-700 mb-1">Number of Copies</label>
-                        <input type="number" id="copies" [value]="printOptions().copies" (input)="updateOption('copies', $event.target.value)" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary" min="1">
+                        <label for="copies" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Number of Copies</label>
+                        <input type="number" id="copies" [value]="printOptions().copies" (input)="updateOption('copies', $event.target.value)" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white" min="1">
                       </div>
 
                       <!-- Page Range -->
                       <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-1">Page Range</label>
+                          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Page Range</label>
                           <div class="flex items-center space-x-4">
                               <div class="flex items-center">
-                                  <input id="pages-all" name="pages" type="radio" [checked]="printOptions().pages === 'all'" (change)="updateOption('pages', 'all')" class="h-4 w-4 text-primary border-gray-300 focus:ring-primary">
-                                  <label for="pages-all" class="ml-2 block text-sm text-gray-900">All</label>
+                                  <input id="pages-all" name="pages" type="radio" [checked]="printOptions().pages === 'all'" (change)="updateOption('pages', 'all')" class="h-4 w-4 text-primary border-gray-300 focus:ring-primary dark:bg-gray-600 dark:border-gray-500">
+                                  <label for="pages-all" class="ml-2 block text-sm text-gray-900 dark:text-gray-200">All</label>
                               </div>
                               <div class="flex items-center">
-                                  <input id="pages-custom" name="pages" type="radio" [checked]="printOptions().pages !== 'all'" (change)="updateOption('pages', '')" class="h-4 w-4 text-primary border-gray-300 focus:ring-primary">
-                                  <label for="pages-custom" class="ml-2 block text-sm text-gray-900">Custom</label>
+                                  <input id="pages-custom" name="pages" type="radio" [checked]="printOptions().pages !== 'all'" (change)="updateOption('pages', '')" class="h-4 w-4 text-primary border-gray-300 focus:ring-primary dark:bg-gray-600 dark:border-gray-500">
+                                  <label for="pages-custom" class="ml-2 block text-sm text-gray-900 dark:text-gray-200">Custom</label>
                               </div>
                           </div>
                           @if (printOptions().pages !== 'all') {
-                              <input type="text" [value]="printOptions().pages" (input)="updateOption('pages', $event.target.value)" placeholder="e.g., 1-5, 8, 11-13" class="mt-2 w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
+                              <input type="text" [value]="printOptions().pages" (input)="updateOption('pages', $event.target.value)" placeholder="e.g., 1-5, 8, 11-13" class="mt-2 w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                           }
                       </div>
 
                       <!-- Color Mode -->
                       <div>
-                        <label class="block text-sm font-medium text-gray-700">Color</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Color</label>
                         <div class="mt-2 grid grid-cols-2 gap-3">
-                          <button type="button" (click)="updateOption('colorMode', 'bw')" [class]="printOptions().colorMode === 'bw' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Black & White</button>
-                          <button type="button" (click)="updateOption('colorMode', 'color')" [class]="printOptions().colorMode === 'color' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Color</button>
+                          <button type="button" (click)="updateOption('colorMode', 'bw')" [class]="printOptions().colorMode === 'bw' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Black & White</button>
+                          <button type="button" (click)="updateOption('colorMode', 'color')" [class]="printOptions().colorMode === 'color' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Color</button>
                         </div>
                       </div>
 
                       <!-- Sided -->
                       <div>
-                        <label class="block text-sm font-medium text-gray-700">Sides</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sides</label>
                         <div class="mt-2 grid grid-cols-2 gap-3">
-                          <button type="button" (click)="updateOption('sides', 'single')" [class]="printOptions().sides === 'single' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Single-Sided</button>
-                          <button type="button" (click)="updateOption('sides', 'double')" [class]="printOptions().sides === 'double' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Double-Sided</button>
+                          <button type="button" (click)="updateOption('sides', 'single')" [class]="printOptions().sides === 'single' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Single-Sided</button>
+                          <button type="button" (click)="updateOption('sides', 'double')" [class]="printOptions().sides === 'double' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Double-Sided</button>
                         </div>
                       </div>
 
                       <!-- Fast Track Option -->
                       <div>
-                        <label class="block text-sm font-medium text-gray-700">Priority</label>
-                        <div class="mt-2 bg-gray-50 rounded-lg p-4 flex items-center justify-between">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Priority</label>
+                        <div class="mt-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 flex items-center justify-between">
                           <div>
-                            <h4 class="font-semibold text-gray-800">Fast Track</h4>
-                            <p class="text-xs text-gray-500">Prioritize your job for a {{ fastOrderSurchargePercent() }}% surcharge.</p>
+                            <h4 class="font-semibold text-gray-800 dark:text-gray-200">Fast Track</h4>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Prioritize your job for a {{ fastOrderSurchargePercent() }}% surcharge.</p>
                           </div>
                           <!-- Toggle Switch -->
-                          <button type="button" (click)="updateOption('isFastOrder', !printOptions().isFastOrder)" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" [class]="printOptions().isFastOrder ? 'bg-primary' : 'bg-gray-200'" role="switch" [attr.aria-checked]="printOptions().isFastOrder">
+                          <button type="button" (click)="updateOption('isFastOrder', !printOptions().isFastOrder)" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" [class]="printOptions().isFastOrder ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-600'" role="switch" [attr.aria-checked]="printOptions().isFastOrder">
                             <span class="sr-only">Use setting</span>
                             <span aria-hidden="true" class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" [class]="printOptions().isFastOrder ? 'translate-x-5' : 'translate-x-0'"></span>
                           </button>
@@ -281,42 +354,42 @@
 
                 <!-- Right Side: Summary & Payment -->
                 <div class="lg:col-span-1">
-                  <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 sticky top-28">
-                    <div class="flex justify-between items-center mb-4 border-b pb-3">
-                      <h3 class="text-xl font-bold text-gray-900">Order Summary</h3>
-                      <button (click)="toggleRatesModal()" class="text-xs font-semibold text-primary hover:underline">View Rates</button>
+                  <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 sticky top-28">
+                    <div class="flex justify-between items-center mb-4 border-b dark:border-gray-700 pb-3">
+                      <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">Order Summary</h3>
+                      <button (click)="toggleRatesModal()" class="text-xs font-semibold text-primary dark:text-primary-400 hover:underline">View Rates</button>
                     </div>
-                    <div class="space-y-3 text-sm text-gray-600">
-                      <div class="flex justify-between"><span>Color Mode:</span> <span class="font-medium text-gray-900 capitalize">{{printOptions().colorMode}}</span></div>
-                      <div class="flex justify-between"><span>Sides:</span> <span class="font-medium text-gray-900 capitalize">{{printOptions().sides}}-sided</span></div>
-                      <div class="flex justify-between"><span>Copies:</span> <span class="font-medium text-gray-900">{{printOptions().copies}}</span></div>
-                      <div class="flex justify-between"><span>Estimated Wait:</span> <span class="font-medium text-gray-900">{{estimatedWaitTime()}} mins</span></div>
+                    <div class="space-y-3 text-sm text-gray-600 dark:text-gray-400">
+                      <div class="flex justify-between"><span>Color Mode:</span> <span class="font-medium text-gray-900 dark:text-gray-100 capitalize">{{printOptions().colorMode}}</span></div>
+                      <div class="flex justify-between"><span>Sides:</span> <span class="font-medium text-gray-900 dark:text-gray-100 capitalize">{{printOptions().sides}}-sided</span></div>
+                      <div class="flex justify-between"><span>Copies:</span> <span class="font-medium text-gray-900 dark:text-gray-100">{{printOptions().copies}}</span></div>
+                      <div class="flex justify-between"><span>Estimated Wait:</span> <span class="font-medium text-gray-900 dark:text-gray-100">{{estimatedWaitTime()}} mins</span></div>
                     </div>
-                    <div class="mt-6 pt-4 border-t">
+                    <div class="mt-6 pt-4 border-t dark:border-gray-700">
                       @if(fastOrderSurcharge() > 0) {
-                        <div class="flex justify-between items-center text-sm text-gray-600 mb-2">
+                        <div class="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400 mb-2">
                           <span>Base Cost</span>
-                          <span class="font-medium text-gray-900">₹{{(baseCost() || 0).toFixed(2)}}</span>
+                          <span class="font-medium text-gray-900 dark:text-gray-100">₹{{(baseCost() || 0).toFixed(2)}}</span>
                         </div>
-                        <div class="flex justify-between items-center text-sm text-red-600">
+                        <div class="flex justify-between items-center text-sm text-red-600 dark:text-red-400">
                           <span>Fast Track Surcharge</span>
                           <span class="font-medium">₹{{(fastOrderSurcharge() || 0).toFixed(2)}}</span>
                         </div>
                       }
                       <div class="flex justify-between items-baseline mt-2">
-                        <span class="text-lg font-bold text-gray-900">Total</span>
+                        <span class="text-lg font-bold text-gray-900 dark:text-gray-100">Total</span>
                         <span class="text-3xl font-extrabold text-primary">₹{{(totalCost() || 0).toFixed(2)}}</span>
                       </div>
                     </div>
                     <div class="mt-6 space-y-3">
-                      <button (click)="submitJob('Paid')" class="w-full bg-primary hover:bg-primary-600 text-white font-bold py-3 px-4 rounded-lg text-lg transition duration-300 flex items-center justify-center space-x-2">
-                        <span>Pay Now & Add to Queue</span>
+                      <button (click)="initiatePayment()" class="w-full bg-primary hover:bg-primary-600 text-white font-bold py-3 px-4 rounded-lg text-lg transition duration-300 flex items-center justify-center space-x-2">
+                        <span>Pay Now via UPI</span>
                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                           <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
                           <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zm-7.5 3.5a.5.5 0 01.5-.5h3a.5.5 0 010 1h-3a.5.5 0 01-.5-.5z" clip-rule="evenodd" />
                         </svg>
                       </button>
-                       <button (click)="submitJob('Unpaid')" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg text-sm transition duration-300">
+                       <button (click)="submitJob('Unpaid')" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500 font-bold py-2 px-4 rounded-lg text-sm transition duration-300">
                         Add to Queue & Pay at Counter
                       </button>
                     </div>
@@ -334,54 +407,54 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
               <!-- User Job Status -->
               <div class="lg:col-span-1">
-                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 text-center sticky top-28">
-                  <h2 class="text-xl font-bold text-gray-900 mb-2">Your Print is in the Queue!</h2>
-                  <p class="text-sm text-gray-500 mb-4">Show this QR code at the counter to collect.</p>
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 text-center sticky top-28">
+                  <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Your Print is in the Queue!</h2>
+                  <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Show this QR code at the counter to collect.</p>
                   <div class="flex justify-center my-4">
-                    <img [src]="getQrCodeUrl(myJob.token)" alt="QR Code for print job" class="rounded-lg">
+                    <img [src]="getQrCodeUrl(myJob.token)" alt="QR Code for print job" class="rounded-lg bg-white p-1">
                   </div>
-                  <div class="bg-primary-50 border-2 border-dashed border-primary-200 rounded-lg p-3">
-                    <p class="text-sm text-primary-700">Your Token Number</p>
-                    <p class="text-4xl font-extrabold text-primary">{{myJob.token}}</p>
+                  <div class="bg-primary-50 dark:bg-gray-700 border-2 border-dashed border-primary-200 dark:border-primary-500/50 rounded-lg p-3">
+                    <p class="text-sm text-primary-700 dark:text-primary-300">Your Token Number</p>
+                    <p class="text-4xl font-extrabold text-primary dark:text-primary-400">{{myJob.token}}</p>
                   </div>
                   <div class="mt-4 text-left space-y-2 text-sm">
                     @if(myJob.isFastOrder) {
-                      <p class="flex items-center justify-center font-bold text-red-600 bg-red-100 px-3 py-1 rounded-full">
+                      <p class="flex items-center justify-center font-bold text-red-600 bg-red-100 dark:text-red-300 dark:bg-red-900/50 px-3 py-1 rounded-full">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
                         Fast Track Job
                       </p>
                     }
-                    <p><span class="font-semibold text-gray-600">File:</span> <span class="font-medium text-gray-900">{{myJob.fileName}}</span></p>
-                    <p><span class="font-semibold text-gray-600">Status:</span>
+                    <p><span class="font-semibold text-gray-600 dark:text-gray-400">File:</span> <span class="font-medium text-gray-900 dark:text-gray-100">{{myJob.fileName}}</span></p>
+                    <p><span class="font-semibold text-gray-600 dark:text-gray-400">Status:</span>
                       <span class="font-bold px-2 py-1 rounded-full text-xs align-middle"
                         [class]="{
-                          'bg-yellow-100 text-yellow-800': myJob.status === 'Queued',
-                          'bg-blue-100 text-blue-800': myJob.status === 'Printing',
-                          'bg-green-100 text-green-800': myJob.status === 'Ready',
-                          'bg-gray-200 text-gray-800': myJob.status === 'Collected'
+                          'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300': myJob.status === 'Queued',
+                          'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300': myJob.status === 'Printing',
+                          'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300': myJob.status === 'Ready',
+                          'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200': myJob.status === 'Collected'
                         }">
                         {{myJob.status}}
                       </span>
                     </p>
-                    <p><span class="font-semibold text-gray-600">Payment:</span>
+                    <p><span class="font-semibold text-gray-600 dark:text-gray-400">Payment:</span>
                        <span class="font-bold px-2 py-1 rounded-full text-xs align-middle"
                         [class]="{
-                          'bg-green-100 text-green-800': myJob.paymentStatus === 'Paid',
-                          'bg-gray-200 text-gray-800': myJob.paymentStatus === 'Unpaid'
+                          'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300': myJob.paymentStatus === 'Paid',
+                          'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200': myJob.paymentStatus === 'Unpaid'
                         }">
                         {{myJob.paymentStatus}}
                       </span>
                     </p>
-                    <p><span class="font-semibold text-gray-600">Paid Amount:</span> <span class="font-medium text-gray-900">₹{{(myJob.cost || 0).toFixed(2)}}</span></p>
+                    <p><span class="font-semibold text-gray-600 dark:text-gray-400">Paid Amount:</span> <span class="font-medium text-gray-900 dark:text-gray-100">₹{{(myJob.cost || 0).toFixed(2)}}</span></p>
                   </div>
                 </div>
               </div>
 
               <!-- Live Print Queue -->
-              <div class="lg:col-span-2 bg-white p-8 rounded-xl shadow-lg border border-gray-200">
-                <div class="flex justify-between items-center mb-6 border-b pb-4">
-                  <h2 class="text-2xl font-bold text-gray-900">Live Print Queue</h2>
-                  <button (click)="refreshCustomerQueue()" [disabled]="isCustomerRefreshing()" class="p-2 rounded-md hover:bg-gray-200 transition text-gray-500 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">
+              <div class="lg:col-span-2 bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+                <div class="flex justify-between items-center mb-6 border-b dark:border-gray-700 pb-4">
+                  <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Live Print Queue</h2>
+                  <button (click)="refreshCustomerQueue()" [disabled]="isCustomerRefreshing()" class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
                     <svg [class]="isCustomerRefreshing() ? 'animate-spin' : ''" class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M4 4l1.5 1.5A9 9 0 0120.5 15M20 20l-1.5-1.5A9 9 0 003.5 9" />
                     </svg>
@@ -392,29 +465,29 @@
                   @for (job of customerLiveQueue(); track job.id) {
                     <div class="p-4 rounded-lg transition-all duration-300"
                         [class]="{
-                          'bg-primary-50 border border-primary-200 shadow-md': job.isUserJob,
-                          'bg-gray-50 border': !job.isUserJob
+                          'bg-primary-50 border border-primary-200 dark:bg-gray-700 dark:border-primary-500/30 shadow-md': job.isUserJob,
+                          'bg-gray-50 border dark:bg-gray-900/50 dark:border-gray-700': !job.isUserJob
                         }">
                       <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-4">
                             <div class="flex items-center">
-                                <span class="text-lg font-bold text-gray-700" [class]="{'text-primary-600': job.isUserJob}">{{job.token}}</span>
+                                <span class="text-lg font-bold text-gray-700 dark:text-gray-300" [class]="{'text-primary-600 dark:text-primary-400': job.isUserJob}">{{job.token}}</span>
                                 @if(job.isFastOrder) {
-                                    <span class="ml-2 text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">FAST</span>
+                                    <span class="ml-2 text-xs font-bold text-red-600 bg-red-100 dark:text-red-300 dark:bg-red-900/50 px-2 py-0.5 rounded-full">FAST</span>
                                 }
                             </div>
                           <div>
-                            <p class="font-semibold text-gray-800 truncate max-w-xs">{{job.fileName}}</p>
-                            <p class="text-sm text-gray-500">{{job.pages}} pages</p>
+                            <p class="font-semibold text-gray-800 dark:text-gray-200 truncate max-w-xs">{{job.fileName}}</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{job.pages}} pages</p>
                           </div>
                         </div>
                         <div class="text-right">
                           <span class="font-bold px-2.5 py-1 rounded-full text-sm"
                             [class]="{
-                              'bg-yellow-100 text-yellow-800': job.status === 'Queued',
-                              'bg-blue-100 text-blue-800': job.status === 'Printing',
-                              'bg-green-100 text-green-800': job.status === 'Ready',
-                              'bg-gray-200 text-gray-800': job.status === 'Collected'
+                              'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300': job.status === 'Queued',
+                              'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300': job.status === 'Printing',
+                              'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300': job.status === 'Ready',
+                              'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200': job.status === 'Collected'
                             }">
                             {{job.status}}
                           </span>
@@ -422,7 +495,7 @@
                       </div>
                     </div>
                   } @empty {
-                    <p class="text-center text-gray-500 py-8">The queue is empty.</p>
+                    <p class="text-center text-gray-500 dark:text-gray-400 py-8">The queue is empty.</p>
                   }
                 </div>
               </div>
@@ -435,19 +508,19 @@
       <div class="max-w-7xl mx-auto w-full">
         <div class="flex justify-between items-center mb-6">
             <div class="flex items-center space-x-4">
-               <h2 class="text-3xl font-bold text-gray-900">Admin Dashboard</h2>
+               <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Admin Dashboard</h2>
                <div class="flex items-center space-x-4 pt-1">
-                 <button (click)="refreshDashboardData()" [disabled]="isRefreshing()" class="p-2 rounded-md hover:bg-gray-200 transition text-gray-500 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">
+                 <button (click)="refreshDashboardData()" [disabled]="isRefreshing()" class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
                     <svg [class]="isRefreshing() ? 'animate-spin' : ''" class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M4 4l1.5 1.5A9 9 0 0120.5 15M20 20l-1.5-1.5A9 9 0 003.5 9" />
                     </svg>
                     <span class="sr-only">Refresh</span>
                  </button>
                  <div class="flex items-center space-x-2">
-                    <span class="text-sm font-medium text-gray-600">Auto-Refresh (30s):</span>
+                    <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Auto-Refresh (30s):</span>
                     <button type="button" (click)="isAutoRefreshEnabled.set(!isAutoRefreshEnabled())" 
                             class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" 
-                            [class]="isAutoRefreshEnabled() ? 'bg-green-600' : 'bg-gray-200'" 
+                            [class]="isAutoRefreshEnabled() ? 'bg-green-600' : 'bg-gray-200 dark:bg-gray-600'" 
                             role="switch" [attr.aria-checked]="isAutoRefreshEnabled()">
                         <span class="sr-only">Toggle Auto-Refresh</span>
                         <span aria-hidden="true" 
@@ -473,50 +546,50 @@
         
         <!-- Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 flex items-center space-x-4">
-                <div class="bg-primary-100 p-3 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg></div>
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 flex items-center space-x-4">
+                <div class="bg-primary-100 dark:bg-primary-900/50 p-3 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary-600 dark:text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg></div>
                 <div>
-                    <p class="text-sm text-gray-500">Total Jobs Today</p>
-                    <p class="text-2xl font-bold text-gray-800">{{ totalJobsToday() }}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Total Jobs Today</p>
+                    <p class="text-2xl font-bold text-gray-800 dark:text-gray-100">{{ totalJobsToday() }}</p>
                 </div>
             </div>
-            <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 flex items-center space-x-4">
-                <div class="bg-green-100 p-3 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v.01" /></svg></div>
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 flex items-center space-x-4">
+                <div class="bg-green-100 dark:bg-green-900/50 p-3 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v.01" /></svg></div>
                 <div>
-                    <p class="text-sm text-gray-500">Total Earnings Today</p>
-                    <p class="text-2xl font-bold text-gray-800">₹{{ (totalEarningsToday() || 0).toFixed(2) }}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Total Earnings Today</p>
+                    <p class="text-2xl font-bold text-gray-800 dark:text-gray-100">₹{{ (totalEarningsToday() || 0).toFixed(2) }}</p>
                 </div>
             </div>
         </div>
 
         <!-- TABS -->
-        <div class="border-b border-gray-200 mb-6">
+        <div class="border-b border-gray-200 dark:border-gray-700 mb-6">
             <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-                <button (click)="adminView.set('queue')" [class]="adminView() === 'queue' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Live Queue</button>
-                <button (click)="adminView.set('completed')" [class]="adminView() === 'completed' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Completed</button>
-                <button (click)="adminView.set('payments')" [class]="adminView() === 'payments' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Payments</button>
-                <button (click)="adminView.set('rates')" [class]="adminView() === 'rates' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Rates</button>
+                <button (click)="adminView.set('queue')" [class]="adminView() === 'queue' ? 'border-primary text-primary dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-500'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Live Queue</button>
+                <button (click)="adminView.set('completed')" [class]="adminView() === 'completed' ? 'border-primary text-primary dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-500'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Completed</button>
+                <button (click)="adminView.set('payments')" [class]="adminView() === 'payments' ? 'border-primary text-primary dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-500'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Payments</button>
+                <button (click)="adminView.set('rates')" [class]="adminView() === 'rates' ? 'border-primary text-primary dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-500'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Rates</button>
             </nav>
         </div>
 
         @switch (adminView()) {
             @case('queue') {
-                <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                    <div class="p-4 border-b flex justify-between items-center">
-                        <h3 class="text-xl font-bold">Live Orders</h3>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="p-4 border-b dark:border-gray-700 flex justify-between items-center">
+                        <h3 class="text-xl font-bold dark:text-gray-100">Live Orders</h3>
                         <div class="flex items-center space-x-2">
-                           <button (click)="queueFilter.set('all')" [class]="queueFilter() === 'all' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'" class="px-3 py-1 text-xs font-semibold rounded-full transition">All</button>
-                           <button (click)="queueFilter.set('queued')" [class]="queueFilter() === 'queued' ? 'bg-yellow-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'" class="px-3 py-1 text-xs font-semibold rounded-full transition">Pending</button>
-                           <button (click)="queueFilter.set('printing')" [class]="queueFilter() === 'printing' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'" class="px-3 py-1 text-xs font-semibold rounded-full transition">Running</button>
+                           <button (click)="queueFilter.set('all')" [class]="queueFilter() === 'all' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'" class="px-3 py-1 text-xs font-semibold rounded-full transition">All</button>
+                           <button (click)="queueFilter.set('queued')" [class]="queueFilter() === 'queued' ? 'bg-yellow-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'" class="px-3 py-1 text-xs font-semibold rounded-full transition">Pending</button>
+                           <button (click)="queueFilter.set('printing')" [class]="queueFilter() === 'printing' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'" class="px-3 py-1 text-xs font-semibold rounded-full transition">Running</button>
                         </div>
                     </div>
                     @if(filteredQueue().length > 0) {
                       <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left text-gray-500">
-                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                                 <tr>
                                     <th scope="col" class="px-6 py-3">Token</th>
-                                    <th scope="col" class="px-6 py-3">File Name</th>
+                                    <th scope="col" class="px-6 py-3">Details</th>
                                     <th scope="col" class="px-6 py-3">Cost</th>
                                     <th scope="col" class="px-6 py-3">Status</th>
                                     <th scope="col" class="px-6 py-3">Actions</th>
@@ -524,52 +597,55 @@
                             </thead>
                             <tbody>
                               @for (job of filteredQueue(); track job.id) {
-                                <tr class="bg-white border-b hover:bg-gray-50" [class.bg-primary-50]="job.isUserJob">
-                                    <th scope="row" class="px-6 py-4 font-bold text-primary whitespace-nowrap flex items-center">
+                                <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600" [class.bg-primary-50]="job.isUserJob" [class.dark:bg-primary-900/20]="job.isUserJob">
+                                    <th scope="row" class="px-6 py-4 font-bold text-primary dark:text-primary-400 whitespace-nowrap flex items-center">
                                       <span>{{job.token}}</span>
                                       @if(job.isFastOrder) {
-                                        <span class="ml-2 text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">FAST</span>
+                                        <span class="ml-2 text-xs font-bold text-red-600 bg-red-100 dark:text-red-300 dark:bg-red-900/50 px-2 py-0.5 rounded-full">FAST</span>
                                       }
                                     </th>
-                                    <td class="px-6 py-4 truncate max-w-xs">{{job.fileName}}</td>
                                     <td class="px-6 py-4">
-                                      <span>₹{{(job.cost || 0).toFixed(2)}}</span>
+                                      <p class="font-semibold text-gray-800 dark:text-gray-200 truncate max-w-xs">{{job.fileName}}</p>
+                                      <p class="text-xs text-gray-500 dark:text-gray-400">{{job.customerName}}</p>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                      <span class="dark:text-gray-200">₹{{(job.cost || 0).toFixed(2)}}</span>
                                       <span class="ml-2 font-semibold px-2 py-0.5 rounded-full text-xs"
                                         [class]="{
-                                          'bg-green-100 text-green-800': job.paymentStatus === 'Paid',
-                                          'bg-gray-200 text-gray-700': job.paymentStatus === 'Unpaid'
-                                        }">
+                                          'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300': job.paymentStatus === 'Paid',
+                                          'bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200': job.paymentStatus === 'Unpaid'
+                                        }" [title]="job.paymentStatus === 'Paid' ? 'Paid via UPI: ' + job.upiId : 'Not Paid'">
                                         {{job.paymentStatus}}
                                       </span>
                                     </td>
                                     <td class="px-6 py-4">
                                       <span class="font-semibold px-2.5 py-1 rounded-full text-xs"
                                         [class]="{
-                                          'bg-yellow-100 text-yellow-800': job.status === 'Queued',
-                                          'bg-blue-100 text-blue-800': job.status === 'Printing',
-                                          'bg-green-100 text-green-800': job.status === 'Ready'
+                                          'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300': job.status === 'Queued',
+                                          'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300': job.status === 'Printing',
+                                          'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300': job.status === 'Ready'
                                         }">
                                         {{job.status}}
                                       </span>
                                     </td>
                                     <td class="px-6 py-4 space-x-2 whitespace-nowrap">
-                                        <button (click)="printJobDocument(job)" [disabled]="!job.file" title="{{ job.file ? 'Print document' : 'No file available to print' }}" class="inline-flex items-center font-medium text-white bg-gray-500 hover:bg-gray-600 px-3 py-1 rounded-md text-xs disabled:bg-gray-300 disabled:cursor-not-allowed">
+                                        <button (click)="printJobDocument(job)" [disabled]="!job.file" title="{{ job.file ? 'Print document' : 'No file available to print' }}" class="inline-flex items-center font-medium text-white bg-gray-500 hover:bg-gray-600 px-3 py-1 rounded-md text-xs disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
                                               <path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v6a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd" />
                                             </svg>
                                             Print
                                         </button>
                                       @if(job.paymentStatus === 'Unpaid') {
-                                        <button (click)="markAsPaid(job.id)" class="font-medium text-white bg-green-500 hover:bg-green-600 px-3 py-1 rounded-md text-xs">Mark Paid</button>
+                                        <button (click)="apiService.markAsPaid(job.id)" class="font-medium text-white bg-green-500 hover:bg-green-600 px-3 py-1 rounded-md text-xs">Mark Paid</button>
                                       }
                                       @if(job.status === 'Queued') {
-                                         <button (click)="updateJobStatus(job.id, 'Printing')" class="font-medium text-white bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded-md text-xs">Start</button>
+                                         <button (click)="apiService.updateJobStatus(job.id, 'Printing')" class="font-medium text-white bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded-md text-xs">Start</button>
                                       }
                                       @if(job.status === 'Printing') {
-                                         <button (click)="updateJobStatus(job.id, 'Ready')" class="font-medium text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded-md text-xs">Ready</button>
+                                         <button (click)="apiService.updateJobStatus(job.id, 'Ready')" class="font-medium text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded-md text-xs">Ready</button>
                                       }
                                       @if(job.status === 'Ready') {
-                                         <button (click)="updateJobStatus(job.id, 'Collected')" class="font-medium text-white bg-gray-600 hover:bg-gray-700 px-3 py-1 rounded-md text-xs">Collect</button>
+                                         <button (click)="apiService.updateJobStatus(job.id, 'Collected')" class="font-medium text-white bg-gray-600 hover:bg-gray-700 px-3 py-1 rounded-md text-xs">Collect</button>
                                       }
                                     </td>
                                 </tr>
@@ -578,112 +654,122 @@
                         </table>
                       </div>
                     } @else {
-                        <p class="text-center py-12 text-gray-500">No jobs match the current filter.</p>
+                        <p class="text-center py-12 text-gray-500 dark:text-gray-400">No jobs match the current filter.</p>
                     }
                 </div>
             }
             @case('completed') {
-                <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                    <div class="p-4 border-b"><h3 class="text-xl font-bold">Completed Jobs Today</h3></div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="p-4 border-b dark:border-gray-700"><h3 class="text-xl font-bold dark:text-gray-100">Completed Jobs Today</h3></div>
                     @if(completedJobs().length > 0) {
                     <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left text-gray-500">
-                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                                <tr><th scope="col" class="px-6 py-3">Token</th><th scope="col" class="px-6 py-3">File Name</th><th scope="col" class="px-6 py-3">Pages</th><th scope="col" class="px-6 py-3">Cost</th></tr>
+                        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                                <tr><th scope="col" class="px-6 py-3">Token</th><th scope="col" class="px-6 py-3">Details</th><th scope="col" class="px-6 py-3">Pages</th><th scope="col" class="px-6 py-3">Cost</th></tr>
                             </thead>
                             <tbody>
                                 @for (job of completedJobs(); track job.id) {
-                                <tr class="bg-white border-b hover:bg-gray-50"><th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{{job.token}}</th><td class="px-6 py-4">{{job.fileName}}</td><td class="px-6 py-4">{{job.pages}}</td><td class="px-6 py-4">₹{{(job.cost || 0).toFixed(2)}}</td></tr>
+                                <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"><th scope="row" class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">{{job.token}}</th>
+                                <td class="px-6 py-4">
+                                  <p class="font-semibold text-gray-800 dark:text-gray-200">{{job.fileName}}</p>
+                                  <p class="text-xs text-gray-500 dark:text-gray-400">{{job.customerName}}</p>
+                                </td>
+                                <td class="px-6 py-4">{{job.pages}}</td><td class="px-6 py-4 dark:text-gray-200">₹{{(job.cost || 0).toFixed(2)}}</td></tr>
                                 }
                             </tbody>
                         </table>
                     </div>
                     } @else {
-                        <p class="text-center py-12 text-gray-500">No jobs have been collected yet today.</p>
+                        <p class="text-center py-12 text-gray-500 dark:text-gray-400">No jobs have been collected yet today.</p>
                     }
                 </div>
             }
             @case('payments') {
-                <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                    <div class="p-4 border-b"><h3 class="text-xl font-bold">Payment History</h3></div>
-                    @if(printQueue().length > 0) {
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="p-4 border-b dark:border-gray-700"><h3 class="text-xl font-bold dark:text-gray-100">Payment History</h3></div>
+                    @if(apiService.printQueue().length > 0) {
                     <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left text-gray-500">
-                             <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                                <tr><th scope="col" class="px-6 py-3">Token</th><th scope="col" class="px-6 py-3">Details</th><th scope="col" class="px-6 py-3">Amount</th><th scope="col" class="px-6 py-3">Job Status</th><th scope="col" class="px-6 py-3">Payment Status</th></tr>
+                        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                             <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                                <tr><th scope="col" class="px-6 py-3">Token</th><th scope="col" class="px-6 py-3">Customer</th><th scope="col" class="px-6 py-3">Amount</th><th scope="col" class="px-6 py-3">Job Status</th><th scope="col" class="px-6 py-3">Payment Status</th></tr>
                             </thead>
                             <tbody>
-                                @for (job of printQueue(); track job.id) {
-                                <tr class="bg-white border-b hover:bg-gray-50"><th scope="row" class="px-6 py-4 font-bold text-primary whitespace-nowrap">{{job.token}}</th><td class="px-6 py-4">{{job.fileName}}</td><td class="px-6 py-4 font-medium text-gray-800">₹{{(job.cost || 0).toFixed(2)}}</td>
+                                @for (job of apiService.printQueue(); track job.id) {
+                                <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"><th scope="row" class="px-6 py-4 font-bold text-primary dark:text-primary-400 whitespace-nowrap">{{job.token}}</th>
+                                <td class="px-6 py-4">
+                                  <p class="font-semibold text-gray-800 dark:text-gray-200">{{job.customerName}}</p>
+                                  <p class="text-xs text-gray-500 dark:text-gray-400">{{job.fileName}}</p>
+                                </td>
+                                <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-200">₹{{(job.cost || 0).toFixed(2)}}</td>
                                 <td class="px-6 py-4"><span class="font-semibold px-2.5 py-1 rounded-full text-xs" [class]="{
-                                    'bg-yellow-100 text-yellow-800': job.status === 'Queued',
-                                    'bg-blue-100 text-blue-800': job.status === 'Printing',
-                                    'bg-green-100 text-green-800': job.status === 'Ready',
-                                    'bg-gray-200 text-gray-800': job.status === 'Collected'
+                                    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300': job.status === 'Queued',
+                                    'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300': job.status === 'Printing',
+                                    'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300': job.status === 'Ready',
+                                    'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200': job.status === 'Collected'
                                 }">{{job.status}}</span></td>
                                 <td class="px-6 py-4"><span class="font-semibold px-2.5 py-1 rounded-full text-xs" [class]="{
-                                    'bg-green-100 text-green-800': job.paymentStatus === 'Paid',
-                                    'bg-gray-200 text-gray-700': job.paymentStatus === 'Unpaid'
-                                }">{{job.paymentStatus}}</span></td>
+                                    'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300': job.paymentStatus === 'Paid',
+                                    'bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200': job.paymentStatus === 'Unpaid'
+                                }" [title]="job.paymentStatus === 'Paid' ? 'Paid via UPI: ' + job.upiId : 'Not Paid'">{{job.paymentStatus}}</span></td>
                                 </tr>
                                 }
                             </tbody>
                         </table>
                     </div>
                     } @else {
-                        <p class="text-center py-12 text-gray-500">No payments recorded yet.</p>
+                        <p class="text-center py-12 text-gray-500 dark:text-gray-400">No payments recorded yet.</p>
                     }
                 </div>
             }
             @case('rates') {
-              <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                <div class="p-4 border-b bg-primary-50">
-                  <h3 class="text-xl font-bold text-primary-700">Manage Printing Rates</h3>
+              <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div class="p-4 border-b dark:border-gray-700 bg-primary-50 dark:bg-gray-700/50">
+                  <h3 class="text-xl font-bold text-primary-700 dark:text-primary-300">Manage Printing Rates</h3>
                 </div>
                 <div class="p-6">
                   <form (submit)="$event.preventDefault(); saveRates()">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <!-- B&W Rate -->
                       <div>
-                        <label for="rate-bw" class="block text-sm font-medium text-gray-700">B&W Rate (per page)</label>
+                        <label for="rate-bw" class="block text-sm font-medium text-gray-700 dark:text-gray-300">B&W Rate (per page)</label>
                         <div class="mt-1 relative rounded-md shadow-sm">
                           <div class="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center"><span class="text-gray-500 sm:text-sm">₹</span></div>
-                          <input type="number" id="rate-bw" [value]="editableRates().bw" (input)="updateEditableRate('bw', $event.target.value)" class="w-full pl-7 pr-12 rounded-md border-gray-300 focus:border-primary focus:ring-primary" step="0.01" min="0">
+                          <input type="number" id="rate-bw" [value]="editableRates().bw" (input)="updateEditableRate('bw', $event.target.value)" class="w-full pl-7 pr-12 rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:border-primary focus:ring-primary" step="0.01" min="0">
                         </div>
                       </div>
                       <!-- Color Rate -->
                       <div>
-                        <label for="rate-color" class="block text-sm font-medium text-gray-700">Color Rate (per page)</label>
+                        <label for="rate-color" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Color Rate (per page)</label>
                         <div class="mt-1 relative rounded-md shadow-sm">
                           <div class="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center"><span class="text-gray-500 sm:text-sm">₹</span></div>
-                          <input type="number" id="rate-color" [value]="editableRates().color" (input)="updateEditableRate('color', $event.target.value)" class="w-full pl-7 pr-12 rounded-md border-gray-300 focus:border-primary focus:ring-primary" step="0.01" min="0">
+                          <input type="number" id="rate-color" [value]="editableRates().color" (input)="updateEditableRate('color', $event.target.value)" class="w-full pl-7 pr-12 rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:border-primary focus:ring-primary" step="0.01" min="0">
                         </div>
                       </div>
                       <!-- Double-Sided Discount -->
                       <div>
-                        <label for="rate-discount" class="block text-sm font-medium text-gray-700">Double-Sided Discount</label>
+                        <label for="rate-discount" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Double-Sided Discount</label>
                         <div class="mt-1 relative rounded-md shadow-sm">
-                          <input type="number" id="rate-discount" [value]="editableRates().discount" (input)="updateEditableRate('discount', $event.target.value)" class="w-full pr-12 rounded-md border-gray-300 focus:border-primary focus:ring-primary" min="0" max="100">
+                          <input type="number" id="rate-discount" [value]="editableRates().discount" (input)="updateEditableRate('discount', $event.target.value)" class="w-full pr-12 rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:border-primary focus:ring-primary" min="0" max="100">
                           <div class="pointer-events-none absolute inset-y-0 right-0 pr-3 flex items-center"><span class="text-gray-500 sm:text-sm">%</span></div>
                         </div>
                       </div>
                       <!-- Fast Track Surcharge -->
                       <div>
-                        <label for="rate-surcharge" class="block text-sm font-medium text-gray-700">Fast Track Surcharge</label>
+                        <label for="rate-surcharge" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Fast Track Surcharge</label>
                          <div class="mt-1 relative rounded-md shadow-sm">
-                          <input type="number" id="rate-surcharge" [value]="editableRates().surcharge" (input)="updateEditableRate('surcharge', $event.target.value)" class="w-full pr-12 rounded-md border-gray-300 focus:border-primary focus:ring-primary" min="0">
+                          <input type="number" id="rate-surcharge" [value]="editableRates().surcharge" (input)="updateEditableRate('surcharge', $event.target.value)" class="w-full pr-12 rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:border-primary focus:ring-primary" min="0">
                           <div class="pointer-events-none absolute inset-y-0 right-0 pr-3 flex items-center"><span class="text-gray-500 sm:text-sm">%</span></div>
                         </div>
                       </div>
                     </div>
-                    <div class="mt-8 pt-5 border-t border-gray-200 flex justify-end items-center space-x-3">
+                    <div class="mt-8 pt-5 border-t border-gray-200 dark:border-gray-700 flex justify-end items-center space-x-3">
                        @if(showSaveConfirmation()) {
-                        <div class="flex items-center space-x-2 text-green-600 transition-opacity duration-300">
+                        <div class="flex items-center space-x-2 text-green-600 dark:text-green-400 transition-opacity duration-300">
                           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
                           <span class="text-sm font-medium">Saved!</span>
                         </div>
                        }
-                       <button type="button" (click)="cancelRateChanges()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancel</button>
+                       <button type="button" (click)="cancelRateChanges()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
                        <button type="submit" class="flex items-center space-x-2 bg-primary hover:bg-primary-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
                           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6a1 1 0 10-2 0v5.586L7.707 10.293zM3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 11-2 0V5H5v1a1 1 0 11-2 0V4z" /></svg>
                           <span>Save Changes</span>
