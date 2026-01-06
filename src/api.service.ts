@@ -24,12 +24,19 @@ export interface PrintRates {
   surcharge: number; // Stored as multiplier, e.g. 1.25
 }
 
+export interface NotificationSettings {
+  newJob: boolean;
+  jobReady: boolean;
+}
+
 export type JobStatus = 'Queued' | 'Printing' | 'Ready' | 'Collected';
 export type PaymentStatus = 'Paid' | 'Unpaid';
 
 // --- Local Storage Keys ---
 const QUEUE_STORAGE_KEY = 'printSmartQueue';
 const RATES_STORAGE_KEY = 'printSmartRates';
+const NOTIFICATION_SETTINGS_KEY = 'printSmartNotificationSettings';
+
 
 @Injectable({
   providedIn: 'root',
@@ -43,25 +50,50 @@ export class ApiService {
     discount: 0.9,
     surcharge: 1.25,
   });
+  notificationSettings = signal<NotificationSettings>({
+    newJob: true,
+    jobReady: false,
+  });
   isLoggedIn = signal<boolean>(false);
 
   private queueInterval: any;
+  private previousQueueState: PrintJob[] = [];
 
   constructor() {
     this.loadStateFromStorage();
+    this.previousQueueState = JSON.parse(JSON.stringify(this.printQueue())); // Initialize after loading
 
-    // Auto-save the queue to local storage whenever it changes.
+    // --- Core Effects for State Management & Simulation ---
     effect(() => {
+      // Auto-save the queue to local storage whenever it changes.
       localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(this.printQueue()));
     });
     
-    // Manage queue simulation based on login state
     effect(() => {
+        // Manage queue simulation based on login state
         if (this.isLoggedIn()) {
             this.stopQueueSimulation();
         } else {
             this.startQueueSimulation();
         }
+    });
+
+    effect(() => {
+      // Watch for queue changes to trigger notifications
+      const currentQueue = this.printQueue();
+      if (this.notificationSettings().jobReady) {
+        currentQueue.forEach(job => {
+          const oldJob = this.previousQueueState.find(old => old.id === job.id);
+          // Trigger if a job's status changes specifically to 'Ready'
+          if (oldJob && oldJob.status !== 'Ready' && job.status === 'Ready') {
+            this.showNotification('Job Ready!', {
+              body: `Job ${job.token} (${job.fileName}) is ready for collection.`,
+              icon: 'favicon.ico'
+            });
+          }
+        });
+      }
+      this.previousQueueState = JSON.parse(JSON.stringify(currentQueue));
     });
   }
 
@@ -88,6 +120,11 @@ export class ApiService {
     this.printQueue.update(queue => 
       [newJob, ...queue].sort((a,b) => (b.isFastOrder ? 1 : 0) - (a.isFastOrder ? 1 : 0) || a.pages - b.pages)
     );
+    
+    if(this.notificationSettings().newJob) {
+        this.showNotification('New Online Order!', { body: `Job ${newJob.token} for "${newJob.fileName}" added to the queue.`, icon: 'favicon.ico' });
+    }
+    
     return newJob;
   }
   
@@ -100,6 +137,9 @@ export class ApiService {
           isUserJob: false,
       };
       this.printQueue.update(queue => [newJob, ...queue].sort((a, b) => (b.isFastOrder ? 1 : 0) - (a.isFastOrder ? 1 : 0) || a.pages - b.pages));
+      if(this.notificationSettings().newJob) {
+        this.showNotification('New Walk-in Order!', { body: `Job ${newJob.token} added to the queue.`, icon: 'favicon.ico' });
+    }
   }
 
   updateJobStatus(jobId: number, status: JobStatus): void {
@@ -118,30 +158,43 @@ export class ApiService {
     );
   }
 
-  // --- RATES MANAGEMENT ---
+  // --- RATES & SETTINGS MANAGEMENT ---
   updateRates(newRates: PrintRates): void {
     this.rates.set(newRates);
-    // Persist rates explicitly when they are updated by the admin.
     localStorage.setItem(RATES_STORAGE_KEY, JSON.stringify(newRates));
+  }
+  
+  updateNotificationSettings(settings: NotificationSettings): void {
+    this.notificationSettings.set(settings);
+    localStorage.setItem(NOTIFICATION_SETTINGS_KEY, JSON.stringify(settings));
   }
 
   // --- DATA PERSISTENCE & MOCK DATA ---
   private loadStateFromStorage(): void {
-    // Load Rates and ensure they persist
+    // Load Rates
     try {
       const savedRates = localStorage.getItem(RATES_STORAGE_KEY);
       if (savedRates) {
-        // If rates exist in storage, load them.
         this.rates.set(JSON.parse(savedRates));
       } else {
-        // If no rates are saved (e.g., first visit), save the default rates
-        // to ensure they are persistent from the very first run.
         localStorage.setItem(RATES_STORAGE_KEY, JSON.stringify(this.rates()));
       }
     } catch (e) {
       console.error('Failed to parse rates from localStorage, resetting to default.', e);
-      // If there's an error with the stored data, reset to default and save them.
       localStorage.setItem(RATES_STORAGE_KEY, JSON.stringify(this.rates()));
+    }
+
+    // Load Notification Settings
+    try {
+      const savedSettings = localStorage.getItem(NOTIFICATION_SETTINGS_KEY);
+      if (savedSettings) {
+        this.notificationSettings.set(JSON.parse(savedSettings));
+      } else {
+        localStorage.setItem(NOTIFICATION_SETTINGS_KEY, JSON.stringify(this.notificationSettings()));
+      }
+    } catch (e) {
+      console.error('Failed to parse notification settings from localStorage, resetting to default.', e);
+      localStorage.setItem(NOTIFICATION_SETTINGS_KEY, JSON.stringify(this.notificationSettings()));
     }
 
     // Load Queue
@@ -168,6 +221,24 @@ export class ApiService {
     ]);
   }
   
+  // --- NOTIFICATION UTILITY ---
+  private showNotification(title: string, options: NotificationOptions): void {
+    if (!('Notification' in window)) {
+      console.log('This browser does not support desktop notification');
+      return;
+    }
+
+    if (Notification.permission === 'granted') {
+      new Notification(title, options);
+    } else if (Notification.permission !== 'denied') {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          new Notification(title, options);
+        }
+      });
+    }
+  }
+
   // --- MOCK QUEUE SIMULATION ---
   private stopQueueSimulation(): void {
     if (this.queueInterval) {

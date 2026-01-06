@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, signal, computed, OnDestroy, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 // FIX: Imported JobStatus to resolve a TypeScript error in the `filteredQueue` computed signal.
-import { ApiService, PrintJob, PaymentStatus, JobStatus } from './api.service';
+import { ApiService, PrintJob, PaymentStatus, JobStatus, NotificationSettings } from './api.service';
 
 // --- Type declaration for external libraries ---
 declare var Html5Qrcode: any;
@@ -42,7 +42,7 @@ export class AppComponent implements OnDestroy {
   isCustomerRefreshing = signal<boolean>(false);
 
   // --- ADMIN UI STATE ---
-  adminView = signal<'queue' | 'completed' | 'payments' | 'rates'>('queue');
+  adminView = signal<'queue' | 'completed' | 'payments' | 'rates' | 'settings'>('queue');
   queueFilter = signal<'all' | 'queued' | 'printing'>('all');
   showSaveConfirmation = signal<boolean>(false);
   isRefreshing = signal<boolean>(false);
@@ -74,6 +74,8 @@ export class AppComponent implements OnDestroy {
   customerFormError = signal<string | null>(null);
   
   editableRates = signal({ bw: 0, color: 0, discount: 0, surcharge: 0 });
+  editableNotificationSettings = signal<NotificationSettings>({ newJob: true, jobReady: false });
+
 
   // --- COMPUTED SIGNALS (DERIVED FROM SERVICE AND UI STATE) ---
   rates = computed(() => this.apiService.rates());
@@ -141,6 +143,8 @@ export class AppComponent implements OnDestroy {
   constructor() {
     this.initializeDarkMode();
     this.syncEditableRates();
+    this.syncEditableNotificationSettings();
+
 
     // Effect to manage the auto-refresh timer
     effect((onCleanup) => {
@@ -173,6 +177,13 @@ export class AppComponent implements OnDestroy {
         });
     });
   }
+  
+  private syncEditableNotificationSettings(): void {
+    effect(() => {
+        this.editableNotificationSettings.set(this.apiService.notificationSettings());
+    });
+  }
+
 
   toggleDarkMode(): void {
     this.isDarkMode.update(value => !value);
@@ -419,6 +430,33 @@ export class AppComponent implements OnDestroy {
   cancelRateChanges(): void {
     this.syncEditableRates(); // Resyncs with the service state
   }
+  
+  // --- NOTIFICATION SETTINGS ---
+  private requestNotificationPermission(): void {
+    if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+      Notification.requestPermission();
+    }
+  }
+
+  toggleNotificationSetting(key: keyof NotificationSettings) {
+    const currentValue = this.editableNotificationSettings()[key];
+    // If we are enabling a notification, ensure we have permission.
+    if (!currentValue) {
+      this.requestNotificationPermission();
+    }
+    this.editableNotificationSettings.update(settings => ({ ...settings, [key]: !currentValue }));
+  }
+
+  saveNotificationSettings(): void {
+    this.apiService.updateNotificationSettings(this.editableNotificationSettings());
+    this.showSaveConfirmation.set(true);
+    setTimeout(() => this.showSaveConfirmation.set(false), 3000);
+  }
+
+  cancelNotificationSettings(): void {
+    this.syncEditableNotificationSettings();
+  }
+
 
   // --- QR SCANNER METHODS ---
   toggleScannerModal(): void {
