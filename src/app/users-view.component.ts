@@ -57,11 +57,13 @@ import { AdminUser } from '../api.service';
               </div>
               <div>
                 <label for="new-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
-                <input type="password" id="new-password" [value]="newPassword()" (input)="newPassword.set($event.target.value); formError.set(null)" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+                <!-- FIX: Replaced inline event handler with component method to prevent template parsing errors. -->
+                <input type="password" id="new-password" [value]="newPassword()" (input)="onNewPasswordInput($event)" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
               </div>
               <div>
                 <label for="confirm-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Confirm Password</label>
-                <input type="password" id="confirm-password" [value]="confirmPassword()" (input)="confirmPassword.set($event.target.value); formError.set(null)" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+                <!-- FIX: Replaced inline event handler with component method to prevent template parsing errors. -->
+                <input type="password" id="confirm-password" [value]="confirmPassword()" (input)="onConfirmPasswordInput($event)" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
               </div>
               @if(formError(); as msg) {
                 <p class="text-sm text-red-600 dark:text-red-400">{{ msg }}</p>
@@ -185,6 +187,16 @@ export class UsersViewComponent {
     this.editFormError.set(null);
   }
 
+  onNewPasswordInput(event: Event): void {
+    this.newPassword.set((event.target as HTMLInputElement).value);
+    this.formError.set(null);
+  }
+
+  onConfirmPasswordInput(event: Event): void {
+    this.confirmPassword.set((event.target as HTMLInputElement).value);
+    this.formError.set(null);
+  }
+
   handleAddUser(): void {
     this.formError.set(null);
     if (!this.newUsername() || !this.newPassword()) {
@@ -201,7 +213,8 @@ export class UsersViewComponent {
       password: this.newPassword()
     });
 
-    if (!this.creationError()()) {
+    // FIX: Corrected calling a signal's value. The getter returns a signal, which is then called to get the value. `creationError()()` was incorrect.
+    if (!this.creationError()) {
       this.newUsername.set('');
       this.newPassword.set('');
       this.confirmPassword.set('');
@@ -250,7 +263,8 @@ export class UsersViewComponent {
     // we can close it immediately if the updateError signal isn't immediately set.
     // This requires a microtask delay to allow parent state to propagate.
     Promise.resolve().then(() => {
-        if (!this.updateError()()) {
+        // FIX: Corrected calling a signal's value. The getter returns a signal, which is then called to get the value. `updateError()()` was incorrect.
+        if (!this.updateError()) {
             this.closeEditModal();
         }
     });

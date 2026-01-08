@@ -167,6 +167,7 @@
         <app-queue-view 
             [jobs]="filteredQueue()"
             [queueFilter]="queueFilter()"
+            [isRefreshing]="isRefreshing()"
             (filterChange)="queueFilter.set($event)"
             (updateStatus)="apiService.updateJobStatus($event.id, $event.status)"
             (markAsPaid)="apiService.markAsPaid($event)"

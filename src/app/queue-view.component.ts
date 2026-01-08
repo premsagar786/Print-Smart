@@ -7,7 +7,20 @@ import { PrintJob, JobStatus, PaymentStatus } from '../api.service';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <!-- Loading Overlay -->
+      @if (isRefreshing()) {
+        <div class="absolute inset-0 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm flex items-center justify-center z-10">
+          <div class="flex items-center space-x-2 text-gray-600 dark:text-gray-300">
+            <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Refreshing Queue...</span>
+          </div>
+        </div>
+      }
+
       <div class="p-4 border-b dark:border-gray-700 flex justify-between items-center">
         <h3 class="text-xl font-bold dark:text-gray-100">Live Orders</h3>
         <div class="flex items-center space-x-2">
@@ -107,6 +120,7 @@ import { PrintJob, JobStatus, PaymentStatus } from '../api.service';
 export class QueueViewComponent {
   jobs = input.required<PrintJob[]>();
   queueFilter = input.required<'all' | 'queued' | 'printing'>();
+  isRefreshing = input.required<boolean>();
 
   filterChange = output<'all' | 'queued' | 'printing'>();
   updateStatus = output<{id: number, status: JobStatus}>();

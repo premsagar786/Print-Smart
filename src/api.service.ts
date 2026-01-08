@@ -60,7 +60,7 @@ export class ApiService {
     newJob: true,
     jobReady: false,
   });
-  isLoggedIn = signal<boolean>(false);
+  isLoggedIn = signal<boolean>(true);
   adminUsers = signal<AdminUser[]>([]);
   currentUser = signal<AdminUser | null>(null);
 
@@ -69,6 +69,7 @@ export class ApiService {
 
   constructor() {
     this.loadStateFromStorage();
+    this.currentUser.set({ username: 'admin', password: '' });
     this.previousQueueState = JSON.parse(JSON.stringify(this.printQueue())); // Initialize after loading
 
     // --- Core Effects for State Management & Simulation ---
@@ -77,14 +78,8 @@ export class ApiService {
       localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(this.printQueue()));
     });
     
-    effect(() => {
-        // Manage queue simulation based on login state
-        if (this.isLoggedIn()) {
-            this.stopQueueSimulation();
-        } else {
-            this.startQueueSimulation();
-        }
-    });
+    // The customer-facing queue simulation is no longer needed
+    this.stopQueueSimulation();
 
     effect(() => {
       // Watch for queue changes to trigger notifications
@@ -106,21 +101,6 @@ export class ApiService {
   }
 
   // --- AUTHENTICATION ---
-  login(username: string, password: string): boolean {
-    const user = this.adminUsers().find(u => u.username === username);
-    if (user && user.password === password) {
-      this.isLoggedIn.set(true);
-      this.currentUser.set({ username: user.username, password: '' }); // Don't store password in session state
-      return true;
-    }
-    return false;
-  }
-
-  logout(): void {
-    this.isLoggedIn.set(false);
-    this.currentUser.set(null);
-  }
-
   addUser(user: AdminUser): { success: boolean, message?: string } {
     const existingUser = this.adminUsers().find(u => u.username.toLowerCase() === user.username.toLowerCase());
     if (existingUser) {
