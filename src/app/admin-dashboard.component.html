@@ -1,0 +1,219 @@
+<!-- Walk-in Order Modal -->
+@if (showWalkinOrderModal()) {
+  <div class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50" (click)="toggleWalkinOrderModal()">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md p-8 m-4" (click)="$event.stopPropagation()">
+        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Add Walk-in Order</h2>
+        <form (submit)="$event.preventDefault(); addWalkinOrder()">
+            <div class="space-y-4">
+                <div>
+                    <label for="walkin-pages" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Number of Pages</label>
+                    <input type="number" id="walkin-pages" [value]="walkinOrderPages()" (input)="walkinOrderPages.set(+$event.target.value)" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white" min="1">
+                </div>
+                 <div>
+                    <label for="walkin-copies" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Number of Copies</label>
+                    <input type="number" id="walkin-copies" [value]="walkinOrderCopies()" (input)="walkinOrderCopies.set(+$event.target.value)" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white" min="1">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Color Mode</label>
+                    <div class="mt-2 grid grid-cols-2 gap-3">
+                        <button type="button" (click)="walkinOrderColorMode.set('bw')" [class]="walkinOrderColorMode() === 'bw' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200'" class="px-4 py-2 text-sm font-semibold rounded-md transition">B&W</button>
+                        <button type="button" (click)="walkinOrderColorMode.set('color')" [class]="walkinOrderColorMode() === 'color' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Color</button>
+                    </div>
+                </div>
+                 <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sides</label>
+                    <div class="mt-2 grid grid-cols-2 gap-3">
+                        <button type="button" (click)="walkinOrderSides.set('single')" [class]="walkinOrderSides() === 'single' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Single-Sided</button>
+                        <button type="button" (click)="walkinOrderSides.set('double')" [class]="walkinOrderSides() === 'double' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200'" class="px-4 py-2 text-sm font-semibold rounded-md transition">Double-Sided</button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Priority</label>
+                    <div class="mt-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 flex items-center justify-between">
+                      <div>
+                        <h4 class="font-semibold text-sm text-gray-800 dark:text-gray-200">Fast Track</h4>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">+{{ fastOrderSurchargePercent() }}% surcharge</p>
+                      </div>
+                      <button type="button" (click)="walkinOrderIsFastOrder.set(!walkinOrderIsFastOrder())" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" [class]="walkinOrderIsFastOrder() ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-600'" role="switch" [attr.aria-checked]="walkinOrderIsFastOrder()">
+                        <span class="sr-only">Fast Track</span>
+                        <span aria-hidden="true" class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" [class]="walkinOrderIsFastOrder() ? 'translate-x-5' : 'translate-x-0'"></span>
+                      </button>
+                    </div>
+                </div>
+                <div class="pt-4 border-t dark:border-gray-700">
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-lg font-bold text-gray-900 dark:text-gray-100">Total Cost</span>
+                        <span class="text-2xl font-extrabold text-primary">₹{{(walkinOrderCost() || 0).toFixed(2)}}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button type="button" (click)="toggleWalkinOrderModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
+                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-600">Add to Queue</button>
+            </div>
+        </form>
+    </div>
+  </div>
+}
+
+<!-- QR Scanner Modal -->
+@if (showScannerModal()) {
+  <div class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50" (click)="toggleScannerModal()">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-sm p-8 m-4" (click)="$event.stopPropagation()">
+        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4 text-center">Scan Collection QR</h2>
+        <div class="w-full aspect-square flex items-center justify-center">
+            @if (!scannerMessage()) {
+                <div id="qr-reader" class="w-full border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden"></div>
+            } @else {
+                <div class="p-4 rounded-lg text-center"
+                     [class]="{
+                        'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300': scannerMessage()?.type === 'success',
+                        'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300': scannerMessage()?.type === 'error',
+                        'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300': scannerMessage()?.type === 'info'
+                     }">
+                    <p class="font-bold text-lg">
+                      @if(scannerMessage()?.type === 'success'){ Success }
+                      @if(scannerMessage()?.type === 'error'){ Error }
+                      @if(scannerMessage()?.type === 'info'){ Notice }
+                    </p>
+                    <p class="text-sm">{{ scannerMessage()?.text }}</p>
+                </div>
+            }
+        </div>
+        <p class="text-center text-gray-500 dark:text-gray-400 mt-4 text-sm">
+          @if (!scannerMessage()) {
+            Point your camera at the QR code on the customer's screen.
+          } @else {
+            This window will close automatically.
+          }
+        </p>
+        <div class="mt-6 flex justify-center">
+            <button type="button" (click)="toggleScannerModal()" class="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
+        </div>
+    </div>
+  </div>
+}
+
+
+<div class="max-w-7xl mx-auto w-full">
+  <div class="flex justify-between items-center mb-6">
+      <div class="flex items-center space-x-4">
+          <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Admin Dashboard</h2>
+          <div class="flex items-center space-x-4 pt-1">
+              <button (click)="refreshDashboardData()" [disabled]="isRefreshing()" class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                  <svg [class]="isRefreshing() ? 'animate-spin' : ''" class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M4 4l1.5 1.5A9 9 0 0120.5 15M20 20l-1.5-1.5A9 9 0 003.5 9" />
+                  </svg>
+                  <span class="sr-only">Refresh</span>
+              </button>
+              <div class="flex items-center space-x-2">
+                  <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Auto-Refresh (30s):</span>
+                  <button type="button" (click)="isAutoRefreshEnabled.set(!isAutoRefreshEnabled())" 
+                          class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" 
+                          [class]="isAutoRefreshEnabled() ? 'bg-green-600' : 'bg-gray-200 dark:bg-gray-600'" 
+                          role="switch" [attr.aria-checked]="isAutoRefreshEnabled()">
+                      <span class="sr-only">Toggle Auto-Refresh</span>
+                      <span aria-hidden="true" 
+                            class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" 
+                            [class]="isAutoRefreshEnabled() ? 'translate-x-5' : 'translate-x-0'"></span>
+                  </button>
+              </div>
+          </div>
+      </div>
+      <div class="flex items-center space-x-3">
+          <button (click)="toggleScannerModal()" class="flex items-center space-x-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 font-bold py-2 px-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition duration-300">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M0 4a2 2 0 012-2h16a2 2 0 012 2v12a2 2 0 01-2 2H2a2 2 0 01-2-2V4zm11 9a1 1 0 10-2 0v2a1 1 0 102 0v-2zm-4-4a1 1 0 10-2 0v6a1 1 0 102 0V9zm8-4a1 1 0 00-1 1v10a1 1 0 102 0V6a1 1 0 00-1-1zM5 9a1 1 0 10-2 0v6a1 1 0 102 0V9z" /></svg>
+              <span>Scan QR</span>
+          </button>
+          <button (click)="toggleWalkinOrderModal()" class="flex items-center space-x-2 bg-primary hover:bg-primary-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 00-1.5 0v2.5h-2.5a.75.75 0 000 1.5h2.5v2.5a.75.75 0 001.5 0v-2.5h2.5a.75.75 0 000-1.5h-2.5v-2.5z" clip-rule="evenodd" /></svg>
+              <span>Add Walk-in</span>
+          </button>
+      </div>
+  </div>
+  
+  <!-- Summary Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 flex items-center space-x-4">
+          <div class="bg-primary-100 dark:bg-primary-900/50 p-3 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary-600 dark:text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg></div>
+          <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Total Jobs Today</p>
+              <p class="text-2xl font-bold text-gray-800 dark:text-gray-100">{{ totalJobsToday() }}</p>
+          </div>
+      </div>
+      <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 flex items-center space-x-4">
+          <div class="bg-green-100 dark:bg-green-900/50 p-3 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v.01" /></svg></div>
+          <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Total Earnings Today</p>
+              <p class="text-2xl font-bold text-gray-800 dark:text-gray-100">₹{{ (totalEarningsToday() || 0).toFixed(2) }}</p>
+          </div>
+      </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="border-b border-gray-200 dark:border-gray-700 mb-6">
+      <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+          <button (click)="adminView.set('queue')" [class]="adminView() === 'queue' ? 'border-primary text-primary dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-500'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Live Queue</button>
+          <button (click)="adminView.set('completed')" [class]="adminView() === 'completed' ? 'border-primary text-primary dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-500'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Completed</button>
+          <button (click)="adminView.set('payments')" [class]="adminView() === 'payments' ? 'border-primary text-primary dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-500'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Payments</button>
+          <button (click)="adminView.set('rates')" [class]="adminView() === 'rates' ? 'border-primary text-primary dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-500'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Rates</button>
+          <button (click)="adminView.set('settings')" [class]="adminView() === 'settings' ? 'border-primary text-primary dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-500'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Settings</button>
+          <button (click)="adminView.set('users')" [class]="adminView() === 'users' ? 'border-primary text-primary dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-500'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Users</button>
+      </nav>
+  </div>
+
+  @switch (adminView()) {
+      @case('queue') {
+        <app-queue-view 
+            [jobs]="filteredQueue()"
+            [queueFilter]="queueFilter()"
+            (filterChange)="queueFilter.set($event)"
+            (updateStatus)="apiService.updateJobStatus($event.id, $event.status)"
+            (markAsPaid)="apiService.markAsPaid($event)"
+            (printDocument)="printJobDocument($event)"
+            (updatePriority)="updateJobPriority($event)"
+        ></app-queue-view>
+      }
+      @case('completed') {
+        <app-completed-view [jobs]="completedJobs()"></app-completed-view>
+      }
+      @case('payments') {
+        <app-payments-view
+            [jobs]="filteredPayments()"
+            [paymentFilter]="paymentFilter()"
+            (filterChange)="paymentFilter.set($event)"
+        ></app-payments-view>
+      }
+      @case('rates') {
+        <app-rates-view
+            [editableRates]="editableRates()"
+            [showSaveConfirmation]="showSaveConfirmation()"
+            (updateRate)="onRateUpdate($event)"
+            (saveRates)="saveRates()"
+            (cancelRateChanges)="cancelRateChanges()"
+        ></app-rates-view>
+      }
+      @case('settings') {
+        <app-settings-view
+            [editableSettings]="editableNotificationSettings()"
+            [showSaveConfirmation]="showSaveConfirmation()"
+            (toggleSetting)="toggleNotificationSetting($event)"
+            (saveSettings)="saveNotificationSettings()"
+            (cancelSettings)="cancelNotificationSettings()"
+        ></app-settings-view>
+      }
+      @case('users') {
+        <app-users-view
+          [users]="adminUsers()"
+          [currentUser]="currentUser()"
+          [creationError]="userCreationError()"
+          [deletionError]="userDeletionError()"
+          [updateError]="userUpdateError()"
+          [showSaveConfirmation]="showSaveConfirmation()"
+          (addUser)="createUser($event)"
+          (deleteUser)="deleteUser($event)"
+          (updateUserPassword)="updateUserPassword($event)"
+        ></app-users-view>
+      }
+  }
+</div>
