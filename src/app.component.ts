@@ -44,6 +44,7 @@ export class AppComponent implements OnDestroy {
   // --- ADMIN UI STATE ---
   adminView = signal<'queue' | 'completed' | 'payments' | 'rates' | 'settings'>('queue');
   queueFilter = signal<'all' | 'queued' | 'printing'>('all');
+  paymentFilter = signal<'all' | 'paid' | 'unpaid'>('all');
   showSaveConfirmation = signal<boolean>(false);
   isRefreshing = signal<boolean>(false);
   isAutoRefreshEnabled = signal<boolean>(false);
@@ -132,6 +133,15 @@ export class AppComponent implements OnDestroy {
   });
 
   completedJobs = computed(() => this.apiService.printQueue().filter(job => job.status === 'Collected'));
+  
+  filteredPayments = computed(() => {
+    const queue = this.apiService.printQueue();
+    const filter = this.paymentFilter();
+    if (filter === 'paid') return queue.filter(job => job.paymentStatus === 'Paid');
+    if (filter === 'unpaid') return queue.filter(job => job.paymentStatus === 'Unpaid');
+    return queue;
+  });
+
 
   walkinOrderCost = computed(() => {
       let cost = this.walkinOrderPages() * this.walkinOrderCopies() * (this.walkinOrderColorMode() === 'bw' ? this.rates().bw : this.rates().color);
